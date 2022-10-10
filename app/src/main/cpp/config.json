@@ -1,0 +1,12 @@
+{
+  "name": "libmodlib.so",
+  "description": "this is a simple demo mod for sml",
+  "majorVersion":1,
+  "minorVersion":0,
+  "patchVersion":0,
+  "displayName":"Demo mod",
+  "displaysUI":true,
+  "dependencies": [
+
+  ]
+}
