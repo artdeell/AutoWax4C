@@ -1,12 +1,26 @@
 package git.artdeell.aw4c;
 
-import android.util.Log;
+import git.artdeell.autowax.AutoWax;
 
 public class CanvasMain {
-    static {
-        Log.i("CanvasMain", "Holy shit, it worked. Freaking unbelievable.");
+    private static AutoWax aw = new AutoWax();
+    public static void reauthorized() {
+        String[] creds = getCredentials();
+        aw.resetSession(creds[0], creds[1]);
     }
-    public static int intFromJava() {
-        return 3;
+    public static void candleRun(boolean doQuests, boolean doCandles) {
+        new Thread(()->{
+            reauthorized();
+            if(doCandles) aw.doCandleRun();
+            if(doQuests) aw.doQuests();
+        }).start();
     }
+    public static void init(int version, boolean isBeta) {
+        AutoWax.initWithParameters(version, isBeta);
+    }
+    private static native String[] getCredentials();
+    public static native void goReauthorize();
+    public static native void submitLogString(String s);
+    public static native void submitProgressBar(int cur, int max);
+    public static native int getGameVersion();
 }

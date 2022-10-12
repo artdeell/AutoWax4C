@@ -38,10 +38,10 @@ android {
             version '3.22.1'
         }
     }
-    ndkVersion '24.0.8215888'
+    ndkVersion '25.1.8937393'
 
 }
 
 dependencies {
-    implementation 'io.github.spair:imgui-java-binding:1.86.4'
+    implementation files("libs/newjson.jar")
 }

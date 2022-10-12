@@ -1,6 +1,6 @@
 {
-  "name": "libmodlib.so",
-  "description": "this is a simple demo mod for sml",
+  "name": "libaw4c.so",
+  "description": "Completely overhauled AutoWax for Canvas",
   "majorVersion":1,
   "minorVersion":0,
   "patchVersion":0,
