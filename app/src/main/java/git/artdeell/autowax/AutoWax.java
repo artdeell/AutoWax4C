@@ -28,7 +28,7 @@ public class AutoWax {
     String session = null;
     public static void initWithParameters(int version, boolean isBeta) {
         API_HOST = isBeta ? "beta.radiance.thatgamecompany.com" :  "live.radiance.thatgamecompany.com";
-        userAgent = isBeta ? "Sky-Test-com.tgc.sky.android.test./0.15.1."+version+" (unknown; android 30.0.0; en)":"Sky-Live-com.tgc.sky.android/0.15.1."+ CanvasMain.getGameVersion()+" (unknown; android 30.0.0; en)";
+        userAgent = isBeta ? "Sky-Test-com.tgc.sky.android.test./0.15.1."+version+" (unknown; android 30.0.0; en)":"Sky-Live-com.tgc.sky.android/0.15.1."+ version+" (unknown; android 30.0.0; en)";
     }
     public void resetSession(String userid, String session) {
         this.userid = userid;
@@ -112,6 +112,7 @@ public class AutoWax {
         CRArray.init();
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(4,4,200, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         int maxProgress=0;
+        CanvasMain.submitLogString(Locale.get(Locale.C_RUNNING));
         for(Object o : CRArray.LEVELS) {
             JSONObject level = (JSONObject) o;
             long levelId = level.getLong("level_id");
@@ -129,12 +130,34 @@ public class AutoWax {
                 intermediaryBatch.append("pickup_ids",candles.get(i));
             }
         }
+        tpe.shutdown();
         try {
             while(!tpe.awaitTermination(50, TimeUnit.MILLISECONDS)) {
                 //Log.log("MachineDispatch-Runner","Running for candles...");
                 CanvasMain.submitProgressBar(((tpe.getActiveCount()+tpe.getQueue().size()*-1)+maxProgress),maxProgress);
             }
         } catch (InterruptedException ignored) {}
+        try {
+            JSONObject currency = doPost("/account/get_currency", genInitial());
+            if(currency.optInt("wax",0) >= 150) {
+                int candleCount = currency.optInt("candles", 0);
+                JSONObject forgeRq = genInitial();
+                forgeRq.put("currency", "candles");
+                forgeRq.put("forge_currency", "wax");
+                forgeRq.put("count", currency.getInt("wax")/150);
+                forgeRq.put("cost", 150);
+                JSONObject resp = doPost("/account/buy_candle_wax", forgeRq);
+                if(resp.optString("result", "").equals("ok")) {
+                    candleCount = resp.getJSONObject("currency").getInt("candles");
+                    CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_DONE_C, candleCount));
+                }else{
+                    CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_DONE_C, candleCount));
+                }
+            }
+        }catch (Exception e) {
+            CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_FAILED, e.toString()));
+        }
+
         CanvasMain.submitProgressBar(0, -1);
     }
     public void doQuests() {

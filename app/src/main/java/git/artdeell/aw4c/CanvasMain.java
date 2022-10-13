@@ -22,5 +22,4 @@ public class CanvasMain {
     public static native void goReauthorize();
     public static native void submitLogString(String s);
     public static native void submitProgressBar(int cur, int max);
-    public static native int getGameVersion();
 }

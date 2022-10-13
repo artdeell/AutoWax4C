@@ -32,6 +32,7 @@ static jmethodID method_candleRun;
 static pthread_mutex_t log_mutex;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
+static _Atomic bool userInterfaceShown = true;
 static _Atomic float progressBarVal = -1;
 static vm_string log_strings[6];
 
@@ -105,7 +106,9 @@ void Menu() {
                     "It seems like the current session was terminated. \nPress the button below when you are ready to continue.");
             if (ImGui::Button("Reload session")) JNIWrapper(&reloadSession);
         }
-        if (ImGui::Button("Candle run")) JNIWrapper(&candleRun);
+        if(userInterfaceShown) {
+            if (ImGui::Button("Candle run")) JNIWrapper(&candleRun);
+        }
     }else{
         ImGui::Text("The mod did not load!");
     }
@@ -201,14 +204,8 @@ extern "C"
  void 
 Java_git_artdeell_aw4c_CanvasMain_submitProgressBar(JNIEnv *env, jclass clazz, jint cur, jint max) {
         // TODO: implement submitProgressBar()
-        if(max == -1) progressBarVal = 1;
+        if(max == -1) progressBarVal = -1;
         else progressBarVal = (float)cur / (float)max;
-}
-
-extern "C"
-jint
-Java_git_artdeell_aw4c_CanvasMain_getGameVersion(JNIEnv *env, jclass clazz) {
-    return (jint)Cipher::getGameVersion();
 }
 const JNINativeMethod methods[] = {
         { "submitLogString",     "(Ljava/lang/String;)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_submitLogString},
