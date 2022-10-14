@@ -3,11 +3,11 @@
 //
 
 #include "main.h"
+#include "spiritshop.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
 #include "includes/misc/Logger.h"
 #include "includes/cipher/CipherArm64.h"
-#include <jni.h>
 #include <dlfcn.h>
 
 #define DIE(x) LOGE(x); load_errored = true; return
@@ -19,18 +19,19 @@ typedef struct {
     const char* real_string;
 } vm_string;
 typedef  jint(*jni_getvms_t)(JavaVM**, jsize, jsize*);
-typedef void(*jniexec_t)(JNIEnv*);
 
 static jni_getvms_t JNI_GetCreatedJavaVMs_p;
 static JavaVM *vm;
 
-static jclass main_class;
+jclass main_class;
 static jclass class_String;
+static jobject object_classLoader;
 static jmethodID method_reauthorized;
 static jmethodID method_candleRun;
+static jmethodID method_loadClass;
 
 static pthread_mutex_t log_mutex;
-static bool enable_candles, enable_quests, enable_send, enable_recv;
+static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
@@ -43,6 +44,11 @@ extern char _binary_classes_dex_start[];
 extern char _binary_classes_dex_size[];
 extern char _binary_classes_dex_end[];
 
+extern "C"
+func Start(){
+    Init();
+    return &Menu;
+}
 
 void get_Auth(char *TgcUUID, char *AccountSessionToken){
     uintptr_t address =  Cipher::CipherScan("\x00\x00\x00\xF0\x00\x00\x00\x00\x13\x00\x00\xF9\x00\x00\x00\x97\x00\xE4\x00\x6F", "??xx????x??x???xxxxx");
@@ -113,12 +119,27 @@ void Menu() {
             ImGui::Checkbox("Collect gifts", &enable_recv);
             ImGui::Checkbox("Send gifts", &enable_send);
             if (ImGui::Button("Run")) JNIWrapper(&candleRun);
+            ImGui::Checkbox("Spirit Shops", &open_spiritshops);
+            if(open_spiritshops) {
+                ImGui::Begin("Spirit Shops", NULL, ImGuiWindowFlags_AlwaysAutoResize);
+                spiritshop_draw();
+                ImGui::End();
+            }
+
         }
     }else{
         ImGui::Text("The mod did not load!");
     }
 }
-
+jclass LoadClass(JNIEnv* env, const char* name) {
+    auto clazz = (jclass)env->CallObjectMethod(object_classLoader, method_loadClass, env->NewStringUTF(name));
+    if(env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        LOGE("Failed to load %s", name);
+        return nullptr;
+    }
+    return clazz;
+}
 void Init(){
     memset(log_strings, 0, sizeof(vm_string)*5);
     jsize cnt;
@@ -140,7 +161,7 @@ void Init(){
         DIE("Can't find the class loader");
     }
     jmethodID constructor_InMemoryClassLoader = env->GetMethodID(class_InMemoryClassLoader, "<init>", "(Ljava/nio/ByteBuffer;Ljava/lang/ClassLoader;)V");
-    jmethodID method_loadClass = env->GetMethodID(class_InMemoryClassLoader, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
+    method_loadClass = env->GetMethodID(class_InMemoryClassLoader, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
     if(!constructor_InMemoryClassLoader || !method_loadClass){
         DIE("Can't find the class methods");
     }
@@ -148,12 +169,15 @@ void Init(){
     if(!byteBuffer) {
         DIE("Can't create the byte buffer");
     }
-    LOGI("Creating the class loader...");
-    jobject inMemoryClassLoader = env->NewObject(class_InMemoryClassLoader, constructor_InMemoryClassLoader, byteBuffer,
-                                                 (jobject) nullptr);
-    jobject mainClass = env->CallObjectMethod(inMemoryClassLoader, method_loadClass, env->NewStringUTF("git.artdeell.aw4c.CanvasMain"));
+    object_classLoader = env->NewObject(class_InMemoryClassLoader, constructor_InMemoryClassLoader, byteBuffer,
+                                        (jobject) nullptr);
     if(env->ExceptionCheck()) {
         env->ExceptionDescribe();
+        DIE("Failed to create class loader");
+    }
+    object_classLoader = env->NewGlobalRef(object_classLoader);
+    jclass mainClass = LoadClass(env,"git.artdeell.aw4c.CanvasMain");
+    if(!mainClass) {
         DIE("Failed to load main class");
     }
     LOGI("ClassLoader class = %p", mainClass);
@@ -163,6 +187,7 @@ void Init(){
 
     method_reauthorized = env->GetStaticMethodID(main_class, "reauthorized","()V");
     method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZ)V");
+    spiritshop_initIDs(env);
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }

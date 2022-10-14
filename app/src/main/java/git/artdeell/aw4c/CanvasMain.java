@@ -1,9 +1,10 @@
 package git.artdeell.aw4c;
 
 import git.artdeell.autowax.AutoWax;
+import git.artdeell.autowax.spiritshop.SpiritShop;
 
 public class CanvasMain {
-    private static AutoWax aw = new AutoWax();
+    private static final AutoWax aw = new AutoWax();
     public static void reauthorized() {
         String[] creds = getCredentials();
         aw.resetSession(creds[0], creds[1]);
@@ -17,6 +18,23 @@ public class CanvasMain {
             if(doReceive) aw.collectGifts();
             CanvasMain.unlockUI();
         }).start();
+    }
+    public static void spiritShop(byte op, long arg) {
+        switch (op) {
+            case 0:
+                reauthorized();
+                SpiritShop.get(aw).init();
+                CanvasMain.unlockUI();
+                break;
+            case 1:
+                SpiritShop.get(aw).pushLevel(arg);
+                break;
+            case 2:
+                SpiritShop.get(aw).popLevel();
+                break;
+            case 3:
+                SpiritShop.get(aw).purchase(arg);
+        }
     }
     public static void init(int version, boolean isBeta) {
         AutoWax.initWithParameters(version, isBeta);

@@ -22,7 +22,7 @@ public class GiftTask implements Runnable{
             JSONObject giftRq = host.genInitial();
             giftRq.put("target", friendId);
             giftRq.put("gift_type", giftType);
-            String result = host.doPost("/account/send_message",giftRq).optString("result", "Unknown");
+            String result = host.doPost("/service/relationship/api/v1/free_gifts/send",giftRq).optString("result", "Unknown");
             CanvasMain.submitLogString(nickname + ": " + result);
         }catch(Exception e) {
             e.printStackTrace();
