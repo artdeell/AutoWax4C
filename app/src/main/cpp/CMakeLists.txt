@@ -17,6 +17,7 @@ add_library( # Sets the name of the library.
         SHARED
         main.cpp
         spiritshop.cpp
+        lights.cpp
         ${CMAKE_SOURCE_DIR}/classes_dex.o
         )
 

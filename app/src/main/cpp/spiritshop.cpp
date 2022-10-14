@@ -22,7 +22,7 @@ static _Atomic char op;
 static _Atomic jlong pushVal;
 jmethodID method_spiritShop;
 extern "C" void
-Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, jclass clazz,
+Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unused]] jclass clazz,
                                                         jobjectArray element_strings,
                                                         jobjectArray name_strings, jlongArray gotos) {
     list_size = env->GetArrayLength(element_strings);
@@ -58,7 +58,7 @@ Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, jclass claz
     list_done = true;
 }
 extern "C" void
-Java_git_artdeell_autowax_spiritshop_SpiritShop_initDone(JNIEnv *env, jclass clazz,
+Java_git_artdeell_autowax_spiritshop_SpiritShop_initDone(JNIEnv *env, [[maybe_unused]] jclass clazz,
                                                          jstring result) {
     if(result == nullptr) {
         net_state = 2;
@@ -70,7 +70,7 @@ Java_git_artdeell_autowax_spiritshop_SpiritShop_initDone(JNIEnv *env, jclass cla
     }
 }
 extern "C" void
-Java_git_artdeell_autowax_spiritshop_SpiritShop_purchaseResult(JNIEnv *env, jclass clazz,
+Java_git_artdeell_autowax_spiritshop_SpiritShop_purchaseResult(JNIEnv *env, [[maybe_unused]] jclass clazz,
                                                                jstring result) {
     const char* result_chars = env->GetStringUTFChars(result, nullptr);
     snprintf(purchase_result_chars, 255, "%s", result_chars);
@@ -154,11 +154,13 @@ void ss_draw_net2() {
 }
 void(*ns_draw[4])() = {ss_draw_net0, ss_draw_net1, ss_draw_net2, ss_draw_net4};
 void spiritshop_draw() {
+    ImGui::Begin("Spirit Shops", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     if(ids_ok) {
         ns_draw[net_state]();
     }else{
         ImGui::TextUnformatted("Failed to initialize");
     }
+    ImGui::End();
 }
 
 

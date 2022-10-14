@@ -4,6 +4,7 @@
 
 #include "main.h"
 #include "spiritshop.h"
+#include "lights.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
 #include "includes/misc/Logger.h"
@@ -31,7 +32,7 @@ static jmethodID method_candleRun;
 static jmethodID method_loadClass;
 
 static pthread_mutex_t log_mutex;
-static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops;
+static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops, open_wl_collector;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
@@ -72,8 +73,8 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
     memcpy(&buf, (void *)address, 4);
     CipherArm64::decode_ldrstr_uimm(buf, &rel);
     uintptr_t AccountServerClient = Game[rel/8];
-    std::byte *user = (std::byte *)(AccountServerClient + 702);
-    std::byte *session = (std::byte *)(AccountServerClient + 718);
+    auto *user = (std::byte *)(AccountServerClient + 702);
+    auto *session = (std::byte *)(AccountServerClient + 718);
     snprintf(TgcUUID, 0x40u, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", user[0], user[1], user[2], user[3], user[4], user[5], user[6], user[7], user[8], user[9], user[10], user[11], user[12], user[13], user[14], user[15]);
     snprintf(AccountSessionToken, 0x40u ,"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", session[0], session[1], session[2], session[3], session[4], session[5], session[6], session[7], session[8], session[9], session[10], session[11], session[12], session[13], session[14], session[15]);
 }
@@ -81,7 +82,7 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
 void JNIWrapper(jniexec_t execm) {
     JNIEnv *env;bool detach = false;
     if(vm->GetEnv((void**)&env, JNI_VERSION_1_6) == JNI_EDETACHED) {
-        vm->AttachCurrentThread(&env, NULL);
+        vm->AttachCurrentThread(&env, nullptr);
         detach = true;
     }
     execm(env);
@@ -106,27 +107,33 @@ void printLogLines() {
 void Menu() {
     if(!load_errored) {
         printLogLines();
-        if(progressBarVal != -1)
-            ImGui::ProgressBar(progressBarVal);
+        if(progressBarVal != -1)ImGui::ProgressBar(progressBarVal);
         if (userWantsReauthorization) {
             ImGui::TextUnformatted(
                     "It seems like the current session was terminated. \nPress the button below when you are ready to continue.");
             if (ImGui::Button("Reload session")) JNIWrapper(&reloadSession);
         }
-        if(userInterfaceShown) {
-            ImGui::Checkbox("Run candles", &enable_candles);
-            ImGui::Checkbox("Run quests", &enable_quests);
-            ImGui::Checkbox("Collect gifts", &enable_recv);
-            ImGui::Checkbox("Send gifts", &enable_send);
-            if (ImGui::Button("Run")) JNIWrapper(&candleRun);
-            ImGui::Checkbox("Spirit Shops", &open_spiritshops);
-            if(open_spiritshops) {
-                ImGui::Begin("Spirit Shops", NULL, ImGuiWindowFlags_AlwaysAutoResize);
-                spiritshop_draw();
-                ImGui::End();
-            }
 
-        }
+            if(ImGui::BeginTable("#main",2)) {
+                ImGui::TableSetupColumn("#dailyrun", ImGuiTableColumnFlags_WidthStretch, 0.5);
+                ImGui::TableSetupColumn("#edenrun", ImGuiTableColumnFlags_WidthStretch, 0.5);
+                ImGui::TableNextRow();
+                if(userInterfaceShown) {
+                    ImGui::TableSetColumnIndex(0);
+                    ImGui::Checkbox("Run candles", &enable_candles);
+                    ImGui::Checkbox("Run quests", &enable_quests);
+                    ImGui::Checkbox("Collect gifts", &enable_recv);
+                    ImGui::Checkbox("Send gifts", &enable_send);
+                    if (ImGui::Button("Run")) JNIWrapper(&candleRun);
+                }
+                ImGui::TableSetColumnIndex(1);
+                ImGui::Checkbox("Spirit Shops", &open_spiritshops);
+                ImGui::Checkbox("Collect WL", &open_wl_collector);
+                drop_draw();
+                ImGui::EndTable();
+            }
+            if(open_spiritshops) spiritshop_draw();
+            if(open_wl_collector) lights_draw();
     }else{
         ImGui::Text("The mod did not load!");
     }
@@ -188,17 +195,17 @@ void Init(){
     method_reauthorized = env->GetStaticMethodID(main_class, "reauthorized","()V");
     method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZ)V");
     spiritshop_initIDs(env);
+    lights_initIDs(env);
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }
     env->CallStaticVoidMethod(main_class, env->GetStaticMethodID(main_class, "init","(IZ)V"), Cipher::getGameVersion(), Cipher::isGameBeta());
-
-};
+}
 
 
 extern "C"
  jobjectArray 
-Java_git_artdeell_aw4c_CanvasMain_getCredentials(JNIEnv *env, jclass clazz) {
+Java_git_artdeell_aw4c_CanvasMain_getCredentials(JNIEnv *env, [[maybe_unused]]jclass clazz) {
     char user[64];
     char session[64];
     get_Auth(user, session);
@@ -209,13 +216,12 @@ Java_git_artdeell_aw4c_CanvasMain_getCredentials(JNIEnv *env, jclass clazz) {
 }
 extern "C"
  void 
-Java_git_artdeell_aw4c_CanvasMain_goReauthorize(JNIEnv *env, jclass clazz) {
-        // TODO: implement goReauthorize()
+Java_git_artdeell_aw4c_CanvasMain_goReauthorize([[maybe_unused]]JNIEnv *env, [[maybe_unused]]jclass clazz) {
         userWantsReauthorization = true;
 }
 extern "C"
  void 
-Java_git_artdeell_aw4c_CanvasMain_submitLogString(JNIEnv *env, jclass clazz, jstring s) {
+Java_git_artdeell_aw4c_CanvasMain_submitLogString(JNIEnv *env, [[maybe_unused]]jclass clazz, jstring s) {
     pthread_mutex_lock(&log_mutex);
     log_strings[5] = log_strings[4];
     log_strings[4] = log_strings[3];
@@ -223,7 +229,7 @@ Java_git_artdeell_aw4c_CanvasMain_submitLogString(JNIEnv *env, jclass clazz, jst
     log_strings[2] = log_strings[1];
     log_strings[1] = log_strings[0];
     log_strings[0].jni_string =  (jstring)env->NewGlobalRef((jobject)s);
-    log_strings[0].real_string = env->GetStringUTFChars(s, NULL);
+    log_strings[0].real_string = env->GetStringUTFChars(s, nullptr);
     if(log_strings[5].real_string != nullptr && log_strings[5].jni_string) {
         env->ReleaseStringUTFChars(log_strings[5].jni_string, log_strings[5].real_string);
         env->DeleteGlobalRef(log_strings[5].jni_string);
@@ -232,15 +238,13 @@ Java_git_artdeell_aw4c_CanvasMain_submitLogString(JNIEnv *env, jclass clazz, jst
 }
 extern "C"
  void 
-Java_git_artdeell_aw4c_CanvasMain_submitProgressBar(JNIEnv *env, jclass clazz, jint cur, jint max) {
-        // TODO: implement submitProgressBar()
+Java_git_artdeell_aw4c_CanvasMain_submitProgressBar([[maybe_unused]]JNIEnv *env, [[maybe_unused]]jclass clazz, jint cur, jint max) {
         if(max == -1) progressBarVal = -1;
         else progressBarVal = (float)cur / (float)max;
 }
 extern "C"
 void
-Java_git_artdeell_aw4c_CanvasMain_unlockUI(JNIEnv *env, jclass clazz) {
-    // TODO: implement unlockUI()
+Java_git_artdeell_aw4c_CanvasMain_unlockUI([[maybe_unused]]JNIEnv *env, [[maybe_unused]]jclass clazz) {
     userInterfaceShown = true;
 }
 const JNINativeMethod methods[] = {

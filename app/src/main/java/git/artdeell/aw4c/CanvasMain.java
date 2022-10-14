@@ -36,6 +36,20 @@ public class CanvasMain {
                 SpiritShop.get(aw).purchase(arg);
         }
     }
+    public static void collectLights(String lights, boolean world, boolean spirit) {
+        new Thread(()->{
+            reauthorized();
+            aw.collectLights(lights, world, spirit);
+            unlockWLCollector();
+        }).start();
+    }
+    public static void dropLights(int count) {
+        new Thread(()->{
+            reauthorized();
+            aw.runDrop(count);
+            unlockWLCollector();
+        }).start();
+    }
     public static void init(int version, boolean isBeta) {
         AutoWax.initWithParameters(version, isBeta);
     }
@@ -44,4 +58,5 @@ public class CanvasMain {
     public static native void submitLogString(String s);
     public static native void submitProgressBar(int cur, int max);
     public static native void unlockUI();
+    public static native void unlockWLCollector();
 }
