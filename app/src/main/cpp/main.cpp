@@ -30,6 +30,7 @@ static jmethodID method_reauthorized;
 static jmethodID method_candleRun;
 
 static pthread_mutex_t log_mutex;
+static bool enable_candles, enable_quests, enable_send, enable_recv;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
@@ -78,7 +79,6 @@ void JNIWrapper(jniexec_t execm) {
         detach = true;
     }
     execm(env);
-
     if(detach) {
         vm->DetachCurrentThread();
     }
@@ -87,7 +87,8 @@ void reloadSession(JNIEnv *env) {
     env->CallStaticVoidMethod(main_class, method_reauthorized);
 }
 void candleRun(JNIEnv* env) {
-    env->CallStaticVoidMethod(main_class, method_candleRun, true, true);
+    userInterfaceShown = false;
+    env->CallStaticVoidMethod(main_class, method_candleRun, enable_candles, enable_quests, enable_send, enable_recv);
 }
 void printLogLines() {
     pthread_mutex_lock(&log_mutex);
@@ -107,7 +108,11 @@ void Menu() {
             if (ImGui::Button("Reload session")) JNIWrapper(&reloadSession);
         }
         if(userInterfaceShown) {
-            if (ImGui::Button("Candle run")) JNIWrapper(&candleRun);
+            ImGui::Checkbox("Run candles", &enable_candles);
+            ImGui::Checkbox("Run quests", &enable_quests);
+            ImGui::Checkbox("Collect gifts", &enable_recv);
+            ImGui::Checkbox("Send gifts", &enable_send);
+            if (ImGui::Button("Run")) JNIWrapper(&candleRun);
         }
     }else{
         ImGui::Text("The mod did not load!");
@@ -157,8 +162,8 @@ void Init(){
     registerNatives(env);
 
     method_reauthorized = env->GetStaticMethodID(main_class, "reauthorized","()V");
-    method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZ)V");
-    if(pthread_mutex_init(&log_mutex, NULL)) {
+    method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZ)V");
+    if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }
     env->CallStaticVoidMethod(main_class, env->GetStaticMethodID(main_class, "init","(IZ)V"), Cipher::getGameVersion(), Cipher::isGameBeta());
@@ -207,13 +212,19 @@ Java_git_artdeell_aw4c_CanvasMain_submitProgressBar(JNIEnv *env, jclass clazz, j
         if(max == -1) progressBarVal = -1;
         else progressBarVal = (float)cur / (float)max;
 }
+extern "C"
+void
+Java_git_artdeell_aw4c_CanvasMain_unlockUI(JNIEnv *env, jclass clazz) {
+    // TODO: implement unlockUI()
+    userInterfaceShown = true;
+}
 const JNINativeMethod methods[] = {
         { "submitLogString",     "(Ljava/lang/String;)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_submitLogString},
         {"getCredentials", "()[Ljava/lang/String;", (void*)&Java_git_artdeell_aw4c_CanvasMain_getCredentials},
         {"goReauthorize","()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_goReauthorize},
         {"submitProgressBar","(II)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_submitProgressBar},
+        {"unlockUI","()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_unlockUI},
 };
 void registerNatives(JNIEnv* env) {
     env->RegisterNatives(main_class, methods, sizeof(methods)/sizeof(methods[0]));
 }
-

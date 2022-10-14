@@ -13,6 +13,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -35,7 +36,7 @@ public class AutoWax {
         this.session = session;
         synchronized (sessionLock) {sessionLock.notifyAll();}
     }
-    private JSONObject genInitial() throws JSONException {
+    public JSONObject genInitial() throws JSONException {
         JSONObject ret = new JSONObject();
         ret.put("user", userid);
         ret.put("session", session);
@@ -107,7 +108,28 @@ public class AutoWax {
         System.out.println(resp);
         return resp;
     }
-
+    private void forgeWithOutput(String source, String destination, JSONObject currency, int rate, int localeString) throws SkyProtocolException{
+        int waxCount = currency.optInt(source, 0);
+        int candleCount = currency.optInt(destination, 0);
+        if(waxCount >= rate) {
+            JSONObject forgeRq = genInitial();
+            forgeRq.put("currency", source);
+            forgeRq.put("forge_currency", destination);
+            forgeRq.put("count", waxCount / rate);
+            forgeRq.put("cost", rate);
+            JSONObject resp = doPost("/account/buy_candle_wax", forgeRq);
+            if (resp.optString("result", "").equals("ok")) {
+                if(resp.has("currency")) {
+                    candleCount = resp.getJSONObject("currency").getInt(destination) ;
+                }
+                CanvasMain.submitLogString(Locale.get(localeString, candleCount));
+            } else {
+                CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_FAILED , resp.optString("result", "Unknown error")));
+            }
+        }else{
+            CanvasMain.submitLogString(Locale.get(localeString, candleCount));
+        }
+    }
     public void doCandleRun() {
         CRArray.init();
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(4,4,200, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -139,33 +161,19 @@ public class AutoWax {
         } catch (InterruptedException ignored) {}
         try {
             JSONObject currency = doPost("/account/get_currency", genInitial());
-            if(currency.optInt("wax",0) >= 150) {
-                int candleCount = currency.optInt("candles", 0);
-                JSONObject forgeRq = genInitial();
-                forgeRq.put("currency", "candles");
-                forgeRq.put("forge_currency", "wax");
-                forgeRq.put("count", currency.getInt("wax")/150);
-                forgeRq.put("cost", 150);
-                JSONObject resp = doPost("/account/buy_candle_wax", forgeRq);
-                if(resp.optString("result", "").equals("ok")) {
-                    candleCount = resp.getJSONObject("currency").getInt("candles");
-                    CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_DONE_C, candleCount));
-                }else{
-                    CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_DONE_C, candleCount));
-                }
-            }
+            forgeWithOutput("wax","candles",currency, 150, Locale.C_CANDLE_PRINT_REGULAR);
+            forgeWithOutput("season_wax","season_candle",currency, 12, Locale.C_CANDLE_PRINT_SEASON);
         }catch (Exception e) {
             CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_FAILED, e.toString()));
         }
-
         CanvasMain.submitProgressBar(0, -1);
     }
     public void doQuests() {
         try {
             JSONArray quests = doPost("/account/get_season_quests", genInitial()).getJSONArray("season_quests");
-            //System.out.println(quests.toString(2));
+            int questsLength = quests.length();
 
-            for (int i = 0; i < quests.length(); i++) {
+            for (int i = 0; i < questsLength; i++) {
                 JSONObject quest = quests.getJSONObject(i);
                 if (!quest.getBoolean("activated")) {
                     JSONObject questrq = genInitial();
@@ -183,17 +191,20 @@ public class AutoWax {
                         }
                     }
                 }
+                CanvasMain.submitProgressBar(i+1, questsLength*2);
             }
             CanvasMain.submitLogString(Locale.get(Locale.Q_ACTIVATED));
-            for (int i = 0; i < quests.length(); i++) {
+            for (int i = 0; i < questsLength; i++) {
                 JSONObject quest = quests.getJSONObject(i);
                 double result = upstatAndClaim(quest,0);
                 if(result > 0)
                     upstatAndClaim(quest,result);
+                CanvasMain.submitProgressBar(i+questsLength+1, questsLength*2);
             }
         }catch (Exception e) {
             CanvasMain.submitLogString(Locale.get(Locale.G_EXCEPTION, e.toString()));
         }
+        CanvasMain.submitProgressBar(0, -1);
     }
     private double upstatAndClaim(JSONObject quest, double source) throws SkyProtocolException {
         if (quest.has("stat_type")) {
@@ -226,6 +237,58 @@ public class AutoWax {
             }
         }else{
             return -1;
+        }
+    }
+    public void runGift() {
+        try {
+            JSONObject friendRq = genInitial();
+            friendRq.put("max", 1024);
+            friendRq.put("sort_ver", 1);
+            JSONArray friendList = doPost("/account/get_friend_statues",friendRq).optJSONArray("set_friend_statues");
+            if(friendList == null) {
+                CanvasMain.submitLogString(Locale.get(Locale.F_FRIEND_QUERY_FAILED));
+                return;
+            }
+            JSONObject gifts = doPost("/account/get_pending_messages", genInitial());
+            ArrayList<Gift> alreadySent = new ArrayList<>();
+            if(gifts.has("set_sent_messages")) {
+                for(Object o : gifts.getJSONArray("set_sent_messages")) {
+                    JSONObject sent = (JSONObject) o;
+                    alreadySent.add(new Gift(sent.getString("to_id"), sent.getString("type"), null));
+                }
+            }
+
+            //appendlnToLog(friendList.toString());
+            ThreadPoolExecutor tpe = new ThreadPoolExecutor(4,4,200, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>());
+            for (Object o : friendList) {
+                JSONObject friend = (JSONObject) o;
+                Gift cobj = new Gift(friend.getString("friend_id"), "gift_heart_wax", friend.has("nickname") ? friend.getString("nickname") : "<unknown>");
+                if(!alreadySent.contains(cobj))
+                    tpe.execute(new GiftTask(cobj, this));
+            }
+            tpe.shutdown();
+            tpe.awaitTermination(Long.MAX_VALUE,TimeUnit.DAYS);
+        }catch(Exception e) {
+            CanvasMain.submitLogString(Locale.get(Locale.G_EXCEPTION, e.toString()));
+        }
+    }
+    public void collectGifts() {
+        try {
+            JSONObject gifts = doPost("/account/get_pending_messages", genInitial());
+            if(gifts.has("set_recvd_messages")) {
+                JSONArray giftsArray = gifts.getJSONArray("set_recvd_messages");
+                System.out.println(giftsArray);
+                ThreadPoolExecutor tpe = new ThreadPoolExecutor(4,4,200, TimeUnit.MILLISECONDS,new LinkedBlockingQueue<>());
+                for(Object o : giftsArray){
+                    JSONObject gift = (JSONObject) o;
+                    tpe.execute(new CollectGiftTask(gift.getLong("msg_id"), gift.getString("type"), this));
+                }
+                tpe.shutdown();
+                boolean shutup_android_studio = tpe.awaitTermination(Long.MAX_VALUE,TimeUnit.DAYS);
+                //tpe.execute(new CollectGiftTask());
+            }else CanvasMain.submitLogString(Locale.get(Locale.G_C_CANTREAD));
+        }catch (SkyProtocolException | InterruptedException e) {
+            CanvasMain.submitLogString(Locale.get(Locale.G_EXCEPTION, e.toString()));
         }
     }
 }
