@@ -177,9 +177,11 @@ public class AutoWax {
         } catch (InterruptedException ignored) {
         }
         try {
-            JSONObject currency = doPost("/account/get_currency", genInitial());
-            forgeWithOutput("wax", "candles", currency, 150, Locale.C_CANDLE_PRINT_REGULAR);
-            forgeWithOutput("season_wax", "season_candle", currency, 12, Locale.C_CANDLE_PRINT_SEASON);
+            JSONObject currency = doPost("/account/get_currency", genInitial()).optJSONObject("currency");
+            if(currency != null) {
+                forgeWithOutput("wax", "candles", currency, 150, Locale.C_CANDLE_PRINT_REGULAR);
+                forgeWithOutput("season_wax", "season_candle", currency, 12, Locale.C_CANDLE_PRINT_SEASON);
+            }
         } catch (Exception e) {
             CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_FAILED, e.toString()));
         }
@@ -356,7 +358,7 @@ public class AutoWax {
             JSONObject resp = doPost("/account/wing_buffs/get", genInitial());
             System.out.println(resp.keySet());
             if(!resp.has("wing_buffs")) {
-                CanvasMain.submitLogString(Locale.get(Locale.D_LOAD_FAILED));
+                CanvasMain.submitLogString(Locale.get(Locale.L_LOAD_FAILED));
                 return;
             }
             JSONArray wing_buffs = resp.getJSONArray("wing_buffs");
@@ -377,6 +379,48 @@ public class AutoWax {
                 CanvasMain.submitLogString(Locale.get(Locale.D_OK, dropRq.getJSONArray("names").length()));
             }else{
                 CanvasMain.submitLogString(Locale.get(Locale.D_FAILED));
+            }
+        }catch(Exception e) {
+            CanvasMain.submitLogString(Locale.get(Locale.G_EXCEPTION, e.toString()));
+        }
+    }
+    public void edemRun() {
+        try {
+            JSONObject wingBuffs = doPost("/account/wing_buffs/get", genInitial());
+            if(!wingBuffs.has("wing_buffs")) {
+                CanvasMain.submitLogString(Locale.get(Locale.L_LOAD_FAILED));
+                return;
+            }
+            JSONArray buffsList = wingBuffs.getJSONArray("wing_buffs");
+            CanvasMain.submitLogString(Locale.get(Locale.E_P1));
+            JSONObject fin = genInitial();
+            for(Object o : buffsList) {
+                JSONObject jobj = (JSONObject) o;
+                if(jobj.getBoolean("collected") && !jobj.isNull("deposit_id")) {
+                    JSONArray arr = new JSONArray();
+                    arr.put(jobj.getString("name"));
+                    arr.put(jobj.getLong("deposit_id"));
+                    fin.append("name_deposit_id_pairs", arr);
+                }
+            }
+            doPost("/account/wing_buffs/deposit",fin);
+            CanvasMain.submitLogString(Locale.get(Locale.E_P2));
+            JSONObject conversionResponse = doPost("/account/wing_buffs/convert", genInitial());
+            if(conversionResponse.has("currency")) {
+                JSONObject currency = conversionResponse.getJSONObject("currency");
+                if(currency.has("prestige")) CanvasMain.submitLogString(Locale.get(Locale.E_PRINT_C, currency.getInt("prestige")));
+                if(currency.has("prestige_wax")) CanvasMain.submitLogString(Locale.get(Locale.E_PRINT_W, currency.getInt("prestige_wax")));
+            }
+            if(conversionResponse.has("wing_buffs")) {
+                CanvasMain.submitLogString(Locale.get(Locale.E_P3));
+                JSONArray buffs = conversionResponse.getJSONArray("wing_buffs");
+                int blen = buffs.length();
+                StringBuilder buffList = new StringBuilder();
+                for(int i = 0; i < blen; i++) {
+                    buffList.append(buffs.getJSONObject(i).getString("name"));
+                    if(i != blen-1) buffList.append(',');
+                }
+                collectLights(buffList.toString(), true, true);
             }
         }catch(Exception e) {
             CanvasMain.submitLogString(Locale.get(Locale.G_EXCEPTION, e.toString()));

@@ -50,6 +50,13 @@ public class CanvasMain {
             unlockWLCollector();
         }).start();
     }
+    public static void edemRun() {
+        new Thread(()->{
+            reauthorized();
+            aw.edemRun();
+            unlockEdem();
+        }).start();
+    }
     public static void init(int version, boolean isBeta) {
         AutoWax.initWithParameters(version, isBeta);
     }
@@ -59,4 +66,5 @@ public class CanvasMain {
     public static native void submitProgressBar(int cur, int max);
     public static native void unlockUI();
     public static native void unlockWLCollector();
+    public static native void unlockEdem();
 }

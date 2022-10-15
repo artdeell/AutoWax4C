@@ -5,6 +5,7 @@
 #include "includes/imgui/imgui.h"
 #include "lights.h"
 #include "main.h"
+#include "contextops.h"
 static bool ids_ok = false;
 static _Atomic bool runlock = true;
 static jmethodID method_collectLights;
@@ -36,6 +37,11 @@ void lights_invoke(JNIEnv* env) {
 void ligts_drop(JNIEnv* env) {
     env->CallStaticVoidMethod(main_class, method_dropLights, dropcount);
 }
+int cursorPos;
+int wli_cursor_pos(ImGuiInputTextCallbackData* data) {
+    cursorPos = data->CursorPos;
+    return 0;
+}
 void lights_draw() {
 
     ImGui::Begin("Collect WL");
@@ -45,7 +51,7 @@ void lights_draw() {
         return;
     }
     if(runlock) {
-        ImGui::InputText("###wLstring", wl_input, 16384);
+        ImGui::InputText("###wlstring", wl_input, 16384, ImGuiInputTextFlags_CallbackAlways, &wli_cursor_pos);
         ImGui::Checkbox("World lights", &world_lights);
         ImGui::Checkbox("Spirit lights", &spirit_lights);
         if (ImGui::Button("Run")) {
@@ -55,6 +61,15 @@ void lights_draw() {
         ImGui::SameLine();
         if (ImGui::Button("Clear")) {
             wl_input[0] = 0;
+        }
+        if(contextops_available()) {
+            if (ImGui::Button("Copy")) {
+                contextops_setClipboard(wl_input);
+            }
+            ImGui::SameLine();
+            if(ImGui::Button("Paste")) {
+                contextops_getClipboard(wl_input, (size_t)cursorPos, 16384);
+            }
         }
     } else {
         ImGui::TextUnformatted("The collector is running! Check log for more info");
@@ -69,7 +84,6 @@ void drop_draw() {
     }
     if(runlock) {
         ImGui::InputInt("##count", &dropcount);
-        ImGui::SameLine();
         if(ImGui::Button("Drop")) {
             runlock = false;
             JNIWrapper(&ligts_drop);

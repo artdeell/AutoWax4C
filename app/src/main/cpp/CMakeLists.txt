@@ -18,6 +18,7 @@ add_library( # Sets the name of the library.
         main.cpp
         spiritshop.cpp
         lights.cpp
+        contextops.cpp
         ${CMAKE_SOURCE_DIR}/classes_dex.o
         )
 

@@ -1,7 +1,7 @@
 package git.artdeell.aw4c;
 
 public class Locale {
-    private static final String[] STRINGS = new String[24];
+    private static final String[] STRINGS = new String[29];
     public static final int Q_STAT_SET = 0;
     public static final int Q_CURRENCY = 1;
     public static final int Q_NO_CURRENCY = 2;
@@ -23,9 +23,14 @@ public class Locale {
     public static final int SS_NO_ENTRYPOINT = 18;
     public static final int W_FAILED = 19;
     public static final int W_DONE = 20;
-    public static final int D_LOAD_FAILED = 21;
+    public static final int L_LOAD_FAILED = 21;
     public static final int D_OK = 22;
     public static final int D_FAILED = 23;
+    public static final int E_P1 = 24;
+    public static final int E_P2 = 25;
+    public static final int E_P3= 26;
+    public static final int E_PRINT_C = 27;
+    public static final int E_PRINT_W = 28;
     static {
         STRINGS[Q_STAT_SET] = "Quest stat set: %s";
         STRINGS[Q_CURRENCY] = "%s (%d seasonals, %d candles)";
@@ -48,9 +53,14 @@ public class Locale {
         STRINGS[SS_NO_ENTRYPOINT] = "Can't find the start of the list";
         STRINGS[W_FAILED] = "Failed to collect WL";
         STRINGS[W_DONE] = "Successfully collected %d winged lights out of %d, missing lights: %s";
-        STRINGS[D_LOAD_FAILED] = "Failed to load WL list";
+        STRINGS[L_LOAD_FAILED] = "Failed to load WL list";
         STRINGS[D_FAILED] = "Failed to drop lights";
         STRINGS[D_OK] = "Dropped %d lights";
+        STRINGS[E_P1] = "Sacrificing your lights...";
+        STRINGS[E_P2] = "Materializing your sacrifices...";
+        STRINGS[E_P3] = "Returning your light...";
+        STRINGS[E_PRINT_C]  = "Edem candles: %d";
+        STRINGS[E_PRINT_W] = "Edem wax: %d";
     }
     public static String get(int i) {
         return STRINGS[i];
