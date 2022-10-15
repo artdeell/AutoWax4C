@@ -1,6 +1,7 @@
 package git.artdeell.aw4c;
 
 import git.artdeell.autowax.AutoWax;
+import git.artdeell.autowax.invitemanager.InviteManager;
 import git.artdeell.autowax.spiritshop.SpiritShop;
 
 public class CanvasMain {
@@ -56,6 +57,25 @@ public class CanvasMain {
             aw.edemRun();
             unlockEdem();
         }).start();
+    }
+    public static void inviteManager(byte op, int idx) {
+        reauthorized();
+        InviteManager mgr = InviteManager.get(aw);
+        switch(op) {
+            case 0:
+                mgr.copyInvite(idx);
+                break;
+            case 1:
+                mgr.deleteInvite(idx);
+                break;
+            case 2:
+                mgr.reload();
+                break;
+        }
+    }
+    public static void createInvite(String nick) {
+        reauthorized();
+        InviteManager.get(aw).createInvite(nick);
     }
     public static void init(int version, boolean isBeta) {
         AutoWax.initWithParameters(version, isBeta);

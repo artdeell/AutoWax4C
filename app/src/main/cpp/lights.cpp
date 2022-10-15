@@ -12,7 +12,7 @@ static jmethodID method_collectLights;
 static jmethodID method_dropLights;
 static bool world_lights;
 static bool spirit_lights;
-static char wl_input[16384];
+static char wl_input[16384] = {0};
 static int dropcount;
 
 extern "C" void

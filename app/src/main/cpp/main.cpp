@@ -6,6 +6,7 @@
 #include "spiritshop.h"
 #include "lights.h"
 #include "contextops.h"
+#include "invitemanager.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
 #include "includes/misc/Logger.h"
@@ -34,7 +35,7 @@ static jmethodID method_edemRun;
 static jmethodID method_loadClass;
 
 static pthread_mutex_t log_mutex;
-static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops, open_wl_collector;
+static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops, open_wl_collector, open_invitemanager;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
@@ -129,10 +130,12 @@ void Menu() {
         }
         ImGui::Checkbox("Spirit Shops", &open_spiritshops);
         ImGui::Checkbox("Collect WL", &open_wl_collector);
+        ImGui::Checkbox("Invite Manager", &open_invitemanager);
         drop_draw();
         if(edemShown) if(ImGui::Button("Edem run"))  JNIWrapper(&edemRun);
         if(open_spiritshops) spiritshop_draw();
         if(open_wl_collector) lights_draw();
+        if(open_invitemanager) invitemanager_draw();
     }else{
         ImGui::Text("The mod did not load!");
     }
@@ -197,12 +200,21 @@ void Init(){
     spiritshop_initIDs(env);
     lights_initIDs(env);
     contextops_initIDs(env);
+    invitemanager_initIDs(env);
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }
     env->CallStaticVoidMethod(main_class, env->GetStaticMethodID(main_class, "init","(IZ)V"), Cipher::getGameVersion(), Cipher::isGameBeta());
 }
 
+void* threadWrapper0(void* arg) {
+    JNIWrapper((jniexec_t)arg);
+    return nullptr;
+}
+void ThreadWrapper(jniexec_t exec) {
+    pthread_t thread;
+    pthread_create(&thread, nullptr,&threadWrapper0, (void*)exec);
+}
 
 extern "C"
  jobjectArray 

@@ -8,6 +8,7 @@
 #include <jni.h>
 
 typedef void(*jniexec_t)(JNIEnv*);
+void ThreadWrapper(jniexec_t exec);
 void JNIWrapper(jniexec_t);
 jclass LoadClass(JNIEnv*,const char*);
 extern jclass main_class;

@@ -19,6 +19,7 @@ add_library( # Sets the name of the library.
         spiritshop.cpp
         lights.cpp
         contextops.cpp
+        invitemanager.cpp
         ${CMAKE_SOURCE_DIR}/classes_dex.o
         )
 

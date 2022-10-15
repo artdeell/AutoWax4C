@@ -26,10 +26,18 @@ Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unu
                                                         jobjectArray element_strings,
                                                         jobjectArray name_strings, jlongArray gotos) {
     list_size = env->GetArrayLength(element_strings);
-    if(list != nullptr)
+    if(list != nullptr) {
+        for(jsize i = 0; i < list_size; i++) {
+            free(list[i]);
+        }
         free(list);
-    if(sub_list != nullptr)
+    }
+    if(sub_list != nullptr) {
+        for(jsize i = 0; i < list_size; i++) {
+            free(sub_list[i]);
+        }
         free(sub_list);
+    }
     if(goto_list != nullptr)
         free(goto_list);
     list = (char**)malloc(sizeof(void *) * list_size);
@@ -89,19 +97,17 @@ void spiritshop_initIDs(JNIEnv* env) {
     if(method_spiritShop == nullptr) return;
     ids_ok = true;
 }
-void doMagikJNI(JNIEnv* env) {env->CallStaticVoidMethod(main_class, method_spiritShop,(char) op, (jlong) pushVal);}
-void* doMagikThread(void*) {JNIWrapper(&doMagikJNI);pthread_exit(nullptr);}
-void doMagik() {
-    pthread_t phread;
-    pthread_create(&phread, nullptr, &doMagikThread, nullptr);
+void doMagikJNI(JNIEnv* env) {
+    env->CallStaticVoidMethod(main_class, method_spiritShop,(char) op, (jlong) pushVal);
 }
+
 
 void ss_draw_net0() {
     ImGui::TextUnformatted("Downloading...");
 }
 void ss_draw_net4() {
     net_state = op = 0;
-    doMagik();
+    ThreadWrapper(&doMagikJNI);
 }
 void ss_draw_net1() {
     ImGui::Text("Failed to load: %s", net_init_failreason_chars);
@@ -112,7 +118,7 @@ void ss_draw_net2() {
         if(ImGui::Button("Back")) {
             list_done = false;
             op = 2;
-            doMagik();
+            ThreadWrapper(&doMagikJNI);
         }
         if(purchase_result_chars[0] != 0) {
             ImGui::SameLine();
@@ -134,14 +140,14 @@ void ss_draw_net2() {
                     list_done = false;
                     op = 1;
                     pushVal = goto_list[i];
-                    doMagik();
+                    ThreadWrapper(&doMagikJNI);
                 }
                 ImGui::SameLine();
                 if (ImGui::Button("Buy")) {
                     purchase_result_chars[0] = 0;
                     op = 3;
                     pushVal = goto_list[i];
-                    doMagik();
+                    ThreadWrapper(&doMagikJNI);
                 }
                 ImGui::PopID();
                 ImGui::TableNextRow();
