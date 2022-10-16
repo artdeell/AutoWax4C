@@ -4,12 +4,15 @@ import git.artdeell.autowax.AutoWax;
 import git.artdeell.autowax.invitemanager.InviteManager;
 import git.artdeell.autowax.spiritshop.SpiritShop;
 
+@Keep
 public class CanvasMain {
     private static final AutoWax aw = new AutoWax();
+    @Keep
     public static void reauthorized() {
         String[] creds = getCredentials();
         aw.resetSession(creds[0], creds[1]);
     }
+    @Keep
     public static void candleRun(boolean doQuests, boolean doCandles, boolean doSend, boolean doReceive) {
         new Thread(()->{
             reauthorized();
@@ -20,6 +23,7 @@ public class CanvasMain {
             CanvasMain.unlockUI();
         }).start();
     }
+    @Keep
     public static void spiritShop(byte op, long arg) {
         switch (op) {
             case 0:
@@ -37,6 +41,7 @@ public class CanvasMain {
                 SpiritShop.get(aw).purchase(arg);
         }
     }
+    @Keep
     public static void collectLights(String lights, boolean world, boolean spirit) {
         new Thread(()->{
             reauthorized();
@@ -44,6 +49,7 @@ public class CanvasMain {
             unlockWLCollector();
         }).start();
     }
+    @Keep
     public static void dropLights(int count) {
         new Thread(()->{
             reauthorized();
@@ -51,6 +57,7 @@ public class CanvasMain {
             unlockWLCollector();
         }).start();
     }
+    @Keep
     public static void edemRun() {
         new Thread(()->{
             reauthorized();
@@ -58,6 +65,7 @@ public class CanvasMain {
             unlockEdem();
         }).start();
     }
+    @Keep
     public static void inviteManager(byte op, int idx) {
         reauthorized();
         InviteManager mgr = InviteManager.get(aw);
@@ -73,18 +81,20 @@ public class CanvasMain {
                 break;
         }
     }
+    @Keep
     public static void createInvite(String nick) {
         reauthorized();
         InviteManager.get(aw).createInvite(nick);
     }
+    @Keep
     public static void init(int version, boolean isBeta) {
         AutoWax.initWithParameters(version, isBeta);
     }
-    private static native String[] getCredentials();
-    public static native void goReauthorize();
-    public static native void submitLogString(String s);
-    public static native void submitProgressBar(int cur, int max);
-    public static native void unlockUI();
-    public static native void unlockWLCollector();
-    public static native void unlockEdem();
+    @Keep private static native String[] getCredentials();
+    @Keep public static native void goReauthorize();
+    @Keep public static native void submitLogString(String s);
+    @Keep public static native void submitProgressBar(int cur, int max);
+    @Keep public static native void unlockUI();
+    @Keep public static native void unlockWLCollector();
+    @Keep public static native void unlockEdem();
 }

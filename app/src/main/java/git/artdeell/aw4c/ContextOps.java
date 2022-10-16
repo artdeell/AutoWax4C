@@ -7,9 +7,11 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.util.Log;
 
+@Keep
 public class ContextOps {
     static private ClipboardManager  clipboard;
     @SuppressLint({"PrivateApi", "DiscouragedPrivateApi"})
+    @Keep
     public static boolean init() {
         Log.i("ContextOps", "Initiailizing...");
         try {
@@ -24,6 +26,7 @@ public class ContextOps {
         }
         return false;
     }
+    @Keep
     public static String getClipboard() {
         if(clipboard.hasPrimaryClip()) {
             CharSequence text = clipboard.getPrimaryClip().getItemAt(0).getText();
@@ -31,6 +34,7 @@ public class ContextOps {
         }
         return null;
     }
+    @Keep
     public static void setClipboard(String clipboard_string) {
         clipboard.setPrimaryClip(ClipData.newPlainText("Canvas Copy", clipboard_string));
     }

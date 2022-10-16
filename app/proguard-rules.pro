@@ -19,3 +19,11 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+-keep,allowobfuscation interface git.artdeell.aw4c.Keep
+
+# Do not strip any method/class that is annotated with @DoNotStrip
+-keep @git.artdeell.aw4c.Keep class *
+-keepclassmembers class * {
+    @git.artdeell.aw4c.Keep *;
+}

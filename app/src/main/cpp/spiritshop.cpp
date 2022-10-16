@@ -25,21 +25,21 @@ extern "C" void
 Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unused]] jclass clazz,
                                                         jobjectArray element_strings,
                                                         jobjectArray name_strings, jlongArray gotos) {
-    list_size = env->GetArrayLength(element_strings);
     if(list != nullptr) {
         for(jsize i = 0; i < list_size; i++) {
-            free(list[i]);
+            if(list[i] != nullptr) free(list[i]);
         }
         free(list);
     }
     if(sub_list != nullptr) {
         for(jsize i = 0; i < list_size; i++) {
-            free(sub_list[i]);
+            if(sub_list[i] != nullptr) free(sub_list[i]);
         }
         free(sub_list);
     }
     if(goto_list != nullptr)
         free(goto_list);
+    list_size = env->GetArrayLength(element_strings);
     list = (char**)malloc(sizeof(void *) * list_size);
     sub_list = (char**)malloc(sizeof(void *) * list_size);
     goto_list = (jlong*) malloc(sizeof(jlong) * list_size);

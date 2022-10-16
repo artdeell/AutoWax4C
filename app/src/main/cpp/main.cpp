@@ -7,6 +7,7 @@
 #include "lights.h"
 #include "contextops.h"
 #include "invitemanager.h"
+#include "dlfake/fake_dlfcn.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
 #include "includes/misc/Logger.h"
@@ -50,6 +51,7 @@ extern char _binary_classes_dex_size[];
 extern char _binary_classes_dex_end[];
 
 extern "C"
+__attribute__ ((visibility ("default")))
 func Start(){
     Init();
     return &Menu;
@@ -149,11 +151,31 @@ jclass LoadClass(JNIEnv* env, const char* name) {
     }
     return clazz;
 }
+jni_getvms_t getVMFunction_fake() {
+    void* library = fake_dlopen("libart.so", 0);
+    if(library == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "VMFinder","Google trolling failed. Giving up.");
+        return nullptr;
+    }
+    void* sym = fake_dlsym(library, "JNI_GetCreatedJavaVMs");
+    fake_dlclose(library);
+    return (jni_getvms_t)sym;
+}
+jni_getvms_t getVMFunction() {
+    void* library = dlopen("libnativehelper.so", RTLD_LAZY);
+    if(library == nullptr) {
+        __android_log_print(ANDROID_LOG_ERROR, "VMFinder","Time to troll Google!");
+        return getVMFunction_fake();
+    }
+    void* sym = dlsym(library, "JNI_GetCreatedJavaVMs");
+    dlclose(library);
+    return sym == nullptr ? getVMFunction_fake() : (jni_getvms_t) sym;
+}
 void Init(){
     memset(log_strings, 0, sizeof(vm_string)*5);
     jsize cnt;
-    JNI_GetCreatedJavaVMs_p = (jni_getvms_t) dlsym(dlopen("libnativehelper.so", RTLD_LAZY), "JNI_GetCreatedJavaVMs");
-    if(JNI_GetCreatedJavaVMs_p(&vm, 1, &cnt) != JNI_OK || cnt == 0) {
+    JNI_GetCreatedJavaVMs_p = getVMFunction();
+    if(!JNI_GetCreatedJavaVMs_p || JNI_GetCreatedJavaVMs_p(&vm, 1, &cnt) != JNI_OK || cnt == 0) {
         DIE("Failed to find a JVM");
     }
     JNIEnv* env;
@@ -169,6 +191,13 @@ void Init(){
         env->ExceptionDescribe();
         DIE("Can't find the class loader");
     }
+    jclass class_Class = env->FindClass("java/lang/Class");
+    if(!class_Class || env->ExceptionCheck()) {
+        env->ExceptionDescribe();
+        DIE("Can't find the Class class");
+    }
+    jmethodID method_getClassLoader = env->GetMethodID(class_Class, "getClassLoader", "()Ljava/lang/ClassLoader;");
+
     jmethodID constructor_InMemoryClassLoader = env->GetMethodID(class_InMemoryClassLoader, "<init>", "(Ljava/nio/ByteBuffer;Ljava/lang/ClassLoader;)V");
     method_loadClass = env->GetMethodID(class_InMemoryClassLoader, "loadClass", "(Ljava/lang/String;)Ljava/lang/Class;");
     if(!constructor_InMemoryClassLoader || !method_loadClass){
@@ -179,7 +208,7 @@ void Init(){
         DIE("Can't create the byte buffer");
     }
     object_classLoader = env->NewObject(class_InMemoryClassLoader, constructor_InMemoryClassLoader, byteBuffer,
-                                        (jobject) nullptr);
+                                        env->CallObjectMethod(class_Class, method_getClassLoader));
     if(env->ExceptionCheck()) {
         env->ExceptionDescribe();
         DIE("Failed to create class loader");
