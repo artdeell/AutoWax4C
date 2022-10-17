@@ -113,6 +113,11 @@ void ss_draw_net1() {
     ImGui::Text("Failed to load: %s", net_init_failreason_chars);
     if(ImGui::Button("Retry")) ss_draw_net4();
 }
+float shop_compute_button_column_size() {
+    float size = ImGui::CalcTextSize("Go").x + ImGui::GetStyle().FramePadding.x * 4;
+        size += ImGui::CalcTextSize("Buy").x + ImGui::GetStyle().FramePadding.x * 4;
+    return size;
+}
 void ss_draw_net2() {
     if (list_done) {
         if(ImGui::Button("Back")) {
@@ -127,8 +132,9 @@ void ss_draw_net2() {
             if(ImGui::Button("OK")) purchase_result_chars[0] = 0;
         }
         if (ImGui::BeginTable("#spirit_shop", 2)) {
-            ImGui::TableSetupColumn("names", ImGuiTableColumnFlags_WidthStretch, 0.8);
-            ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthStretch, 0.2);
+            float width = shop_compute_button_column_size();
+            ImGui::TableSetupColumn("names", ImGuiTableColumnFlags_WidthStretch, 1);
+            ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthFixed, width);
             ImGui::TableNextRow();
             for (jsize i = 0; i < list_size; i++) {
                 ImGui::TableSetColumnIndex(0);

@@ -68,6 +68,13 @@ void ivm_status_handler0() {
 void ivm_status_handler1() {
     ImGui::Text("Loading...");
 }
+float ivm_compute_button_column_size() {
+    float size = ImGui::CalcTextSize("Remove").x + ImGui::GetStyle().FramePadding.x * 4;
+    if(contextops_available()) {
+        size += ImGui::CalcTextSize("Copy").x + ImGui::GetStyle().FramePadding.x * 4;
+    }
+    return size;
+}
 void ivm_status_handler2() {
     if(ImGui::Button("Reload")) {
         status = 0;
@@ -79,8 +86,9 @@ void ivm_status_handler2() {
         ThreadWrapper(&invitemanager_create);
     }
     if(ImGui::BeginTable("###invites", 2)) {
-        ImGui::TableSetupColumn("usernames", ImGuiTableColumnFlags_WidthStretch, 0.7);
-        ImGui::TableSetupColumn("buttons", ImGuiTableColumnFlags_WidthStretch, 0.3);
+        float width = ivm_compute_button_column_size();
+        ImGui::TableSetupColumn("usernames", ImGuiTableColumnFlags_WidthStretch, 1);
+        ImGui::TableSetupColumn("buttons", ImGuiTableColumnFlags_WidthFixed, width);
         ImGui::TableNextRow();
         for(jsize i = 0; i < invites_count; i++) {
             ImGui::TableSetColumnIndex(0);
