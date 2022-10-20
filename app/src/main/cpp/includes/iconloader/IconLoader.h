@@ -1,5 +1,7 @@
 #ifndef SKY_MODLOADER_ICONLOADER_H
 #define SKY_MODLOADER_ICONLOADER_H
+
+#include <string>
 #include "../imgui/imgui.h"
 
 #define IL_NO_TEXTURE (ImTextureID)-1

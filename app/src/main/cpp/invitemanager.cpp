@@ -5,6 +5,7 @@
 #include <__threading_support>
 #include "invitemanager.h"
 #include "main.h"
+#include "translation.h"
 #include "contextops.h"
 #include "includes/imgui/imgui.h"
 #include <cstdlib>
@@ -26,22 +27,11 @@ Java_git_artdeell_autowax_invitemanager_InviteManager_onInviteList(JNIEnv *env, 
     if(invites == nullptr) {
         status = 0;
     }
-    if(c_invites != nullptr) {
-        for(jsize i = 0; i < invites_count; i++) {
-            free(c_invites[i]);
-        }
-        free(c_invites);
-    }
+    FreeStringArray(c_invites, invites_count);
     invites_count = env->GetArrayLength(invites);
     c_invites = (char**)malloc(invites_count*(sizeof (void*)));
     for(jsize i = 0; i < invites_count;  i++) {
-        auto invite = (jstring)env->GetObjectArrayElement(invites, i);
-        const char* invite_chars = env->GetStringUTFChars(invite, nullptr);
-        if(asprintf(&c_invites[i], "%s", invite_chars) == -1) {
-            c_invites[i] = nullptr;
-        }
-        env->ReleaseStringUTFChars(invite,invite_chars);
-        env->DeleteLocalRef(invite);
+        WriteStringOrNull(env, &c_invites[i], (jstring)env->GetObjectArrayElement(invites, i));
     }
     status = 2;
 }
@@ -66,22 +56,22 @@ void ivm_status_handler0() {
     ThreadWrapper(&invitemanager_op);
 }
 void ivm_status_handler1() {
-    ImGui::Text("Loading...");
+    ImGui::TextUnformatted(locale_strings[G_LOADING]);
 }
 float ivm_compute_button_column_size() {
-    float size = ImGui::CalcTextSize("Remove").x + ImGui::GetStyle().FramePadding.x * 4;
+    float size = ImGui::CalcTextSize(locale_strings[IM_REMOVE]).x + ImGui::GetStyle().FramePadding.x * 4;
     if(contextops_available()) {
-        size += ImGui::CalcTextSize("Copy").x + ImGui::GetStyle().FramePadding.x * 4;
+        size += ImGui::CalcTextSize(locale_strings[G_COPY]).x + ImGui::GetStyle().FramePadding.x * 4;
     }
     return size;
 }
 void ivm_status_handler2() {
-    if(ImGui::Button("Reload")) {
+    if(ImGui::Button(locale_strings[IM_RELOAD])) {
         status = 0;
     }
     ImGui::InputText("###username", invite_buf, 1024);
     ImGui::SameLine();
-    if(ImGui::Button("Add")) {
+    if(ImGui::Button(locale_strings[IM_ADD])) {
         status = 1;
         ThreadWrapper(&invitemanager_create);
     }
@@ -96,14 +86,14 @@ void ivm_status_handler2() {
             ImGui::TableSetColumnIndex(1);
             ImGui::PushID(i);
             if (contextops_available()) {
-                if (ImGui::Button("Copy")) {
+                if (ImGui::Button(locale_strings[G_COPY])) {
                     op = 0;
                     val = i;
                     ThreadWrapper(&invitemanager_op);
                 }
             }
             ImGui::SameLine();
-            if(ImGui::Button("Remove")) {
+            if(ImGui::Button(locale_strings[IM_REMOVE])) {
                 status = 1;
                 op = 1;
                 val = i;
@@ -118,7 +108,7 @@ void ivm_status_handler2() {
 }
 void (*status_handlers[3])()= {ivm_status_handler0, ivm_status_handler1, ivm_status_handler2};
 void invitemanager_draw() {
-    ImGui::Begin("Invite Manager", nullptr,ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin(locale_strings[M_INVITE_MANAGER], nullptr,ImGuiWindowFlags_AlwaysAutoResize);
     status_handlers[status]();
     ImGui::End();
 }

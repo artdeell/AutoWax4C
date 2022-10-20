@@ -5,6 +5,7 @@
 #include "includes/imgui/imgui.h"
 #include "lights.h"
 #include "main.h"
+#include "translation.h"
 #include "contextops.h"
 static bool ids_ok = false;
 static _Atomic bool runlock = true;
@@ -44,7 +45,7 @@ int wli_cursor_pos(ImGuiInputTextCallbackData* data) {
 }
 void lights_draw() {
 
-    ImGui::Begin("Collect WL");
+    ImGui::Begin(locale_strings[M_COLLECT_WL]);
     if(!ids_ok) {
         ImGui::TextUnformatted("WL init failed");
         ImGui::End();
@@ -52,27 +53,27 @@ void lights_draw() {
     }
     if(runlock) {
         ImGui::InputText("###wlstring", wl_input, 16384, ImGuiInputTextFlags_CallbackAlways, &wli_cursor_pos);
-        ImGui::Checkbox("World lights", &world_lights);
-        ImGui::Checkbox("Spirit lights", &spirit_lights);
-        if (ImGui::Button("Run")) {
+        ImGui::Checkbox(locale_strings[L_WORLD_LIGHTS], &world_lights);
+        ImGui::Checkbox(locale_strings[L_SPIRIT_LIGHTS], &spirit_lights);
+        if (ImGui::Button(locale_strings[G_RUN])) {
             runlock = false;
             JNIWrapper(&lights_invoke);
         }
         ImGui::SameLine();
-        if (ImGui::Button("Clear")) {
+        if (ImGui::Button(locale_strings[G_CLEAR])) {
             wl_input[0] = 0;
         }
         if(contextops_available()) {
-            if (ImGui::Button("Copy")) {
+            if (ImGui::Button(locale_strings[G_COPY])) {
                 contextops_setClipboard(wl_input);
             }
             ImGui::SameLine();
-            if(ImGui::Button("Paste")) {
+            if(ImGui::Button(locale_strings[G_PASTE])) {
                 contextops_getClipboard(wl_input, (size_t)cursorPos, 16384);
             }
         }
     } else {
-        ImGui::TextUnformatted("The collector is running! Check log for more info");
+        ImGui::TextUnformatted(locale_strings[L_COLLECTOR_RUNNING]);
     }
     ImGui::End();
 }
@@ -84,11 +85,11 @@ void drop_draw() {
     }
     if(runlock) {
         ImGui::InputInt("##count", &dropcount);
-        if(ImGui::Button("Drop")) {
+        if(ImGui::Button(locale_strings[L_DROP])) {
             runlock = false;
             JNIWrapper(&ligts_drop);
         }
     }else{
-        ImGui::TextUnformatted("WL collector running");
+        ImGui::TextUnformatted(locale_strings[L_COLLECTOR_RUNNING_SMALL]);
     }
 }

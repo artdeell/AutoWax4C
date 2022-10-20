@@ -15,8 +15,7 @@ public class SpiritShop {
     private final AutoWax host;
     private final HashMap<Long, ArrayList<Element>> tradeLists = new HashMap<>();
     private final Stack<Long> stack = new Stack<>();
-    private String[] elementStrings, nameStrings;
-    private long[] gotos;
+
     public static SpiritShop get(AutoWax host) {
         if(spiritShop == null) spiritShop = new SpiritShop(host);
         return spiritShop;
@@ -27,7 +26,10 @@ public class SpiritShop {
     public void init() {
         try {
             JSONArray resp = host.doPost("/account/get_spirit_shops", host.genInitial()).optJSONArray("spirit_shops");
-            if(resp == null) initDone(Locale.get(Locale.SS_NO_LIST));
+            if(resp == null) {
+                initDone(Locale.get(Locale.SS_NO_LIST));
+                return;
+            }
             for(Object o : resp) {
                 Element element = new Element((JSONObject) o);
                 if(tradeLists.containsKey(element.dep)) {
@@ -41,6 +43,7 @@ public class SpiritShop {
             if(!tradeLists.containsKey(0L)) {
                 tradeLists.clear();
                 initDone(Locale.get(Locale.SS_NO_ENTRYPOINT));
+                return;
             }
             stack.push(0L);
             processTopStack();
@@ -51,15 +54,20 @@ public class SpiritShop {
     }
     private void processTopStack() {
         long stackTop = stack.peek();
+        String[] elementStrings;
+        String[] nameStrings;
+        long[] gotos;
         if(tradeLists.containsKey(stackTop)) {
             ArrayList<Element> tradeList = tradeLists.get(stackTop);
             elementStrings = new String[tradeList.size()];
             nameStrings = new String[tradeList.size()];
             gotos = new long[tradeList.size()];
+            final String yes = Locale.get(Locale.SS_YES);
+            final String no = Locale.get(Locale.SS_NO);
             for(int i = 0; i < tradeList.size(); i++) {
                 Element element = tradeList.get(i);
                 nameStrings[i] = element.nm;
-                elementStrings[i] = Locale.get(Locale.SS_CURRENCY_STRING, element.cst, element.ctyp, element.ap?"yes":"no");
+                elementStrings[i] = Locale.get(Locale.SS_CURRENCY_STRING, element.cst, element.ctyp, element.ap?yes:no);
                 gotos[i] = element.id;
             }
         }else{
@@ -80,7 +88,7 @@ public class SpiritShop {
         JSONObject rq = host.genInitial();
         rq.put("unlock_id", id);
         try {
-            purchaseResult(host.doPost("/account/purchase_spirit_shop_item", rq).optString("result","Unknown"));
+            purchaseResult(host.doPost("/account/purchase_spirit_shop_item", rq).optString("result",Locale.get(Locale.SS_UNKNOWN)));
         }catch (Exception e) {
             purchaseResult(e.toString());
         }

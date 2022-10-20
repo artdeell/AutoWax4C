@@ -1,7 +1,11 @@
 package git.artdeell.aw4c;
 
-public class Locale {
-    private static final String[] STRINGS = new String[29];
+import java.util.HashMap;
+import java.util.Objects;
+
+@Keep public class Locale {
+    private static final HashMap<String, LocaleInt> locales = new HashMap<>();
+    private static final String[] STRINGS = new String[41];
     public static final int Q_STAT_SET = 0;
     public static final int Q_CURRENCY = 1;
     public static final int Q_NO_CURRENCY = 2;
@@ -31,36 +35,22 @@ public class Locale {
     public static final int E_P3= 26;
     public static final int E_PRINT_C = 27;
     public static final int E_PRINT_W = 28;
+    public static final int SS_YES = 29;
+    public static final int SS_NO = 30;
+    public static final int SS_UNKNOWN = 31;
+    public static final int WQ_FAILED_TO_FILTER = 32;
+    public static final int WQ_FORMAT_STR = 33;
+    public static final int WQ_COLLECTED_QUEST = 34;
+    public static final int WQ_COLLECTED_COLLECTIBLE = 35;
+    public static final int WQ_ALREADY_QUEST = 36;
+    public static final int WQ_UNKNOWN_RESPONSE = 37;
+    public static final int WQ_NO_RESPONSE = 38;
+    public static final int WQ_SKY_RES_MISSING = 39;
+    public static final int WQ_COLLECTIBLE_FAILED = 40;
     static {
-        STRINGS[Q_STAT_SET] = "Quest stat set: %s";
-        STRINGS[Q_CURRENCY] = "%s (%d seasonals, %d candles)";
-        STRINGS[Q_NO_CURRENCY] = "No currency response";
-        STRINGS[Q_DENIED] = "Quest denied";
-        STRINGS[Q_DATA_REFRESHED] = "Quest data refreshed: %s";
-        STRINGS[Q_ACTIVATED] = "Quests activated!";
-        STRINGS[G_EXCEPTION]= "An error has occured\n%s";
-        STRINGS[C_RUNNING] = "Running for candles...";
-        STRINGS[C_CANDLE_PRINT_REGULAR] = "Candles: %d";
-        STRINGS[C_CONVERSION_FAILED] = "Failed to convert candles: %s";
-        STRINGS[C_CANDLE_PRINT_SEASON] = "Seasonal candles: %d";
-        STRINGS[F_FRIEND_QUERY_FAILED] = "Failed to read friend list";
-        STRINGS[G_C_FAILED_RETRYING] = "Failed to collect %d due to %s";
-        STRINGS[G_C_FAILED] = "Failed to collect %d";
-        STRINGS[G_C_DONE] = "Collected %d";
-        STRINGS[G_C_CANTREAD] ="Failed to read incoming gifs";
-        STRINGS[SS_NO_LIST] = "Can't find the list";
-        STRINGS[SS_CURRENCY_STRING] = "%d %s (spass:%s)";
-        STRINGS[SS_NO_ENTRYPOINT] = "Can't find the start of the list";
-        STRINGS[W_FAILED] = "Failed to collect WL";
-        STRINGS[W_DONE] = "Successfully collected %d winged lights out of %d, missing lights: %s";
-        STRINGS[L_LOAD_FAILED] = "Failed to load WL list";
-        STRINGS[D_FAILED] = "Failed to drop lights";
-        STRINGS[D_OK] = "Dropped %d lights";
-        STRINGS[E_P1] = "Sacrificing your lights...";
-        STRINGS[E_P2] = "Materializing your sacrifices...";
-        STRINGS[E_P3] = "Returning your light...";
-        STRINGS[E_PRINT_C]  = "Edem candles: %d";
-        STRINGS[E_PRINT_W] = "Edem wax: %d";
+        locales.put(null,new LocaleDefault());
+        locales.put("ru", new LocaleRussian());
+        setLocale(null);
     }
     public static String get(int i) {
         return STRINGS[i];
@@ -68,4 +58,18 @@ public class Locale {
     public static String get(int i, Object... va) {
         return String.format(STRINGS[i], va);
     }
+    @Keep public static void init() {
+        java.util.Locale locale = java.util.Locale.getDefault();
+        String localeName = locale.getLanguage()+" "+locale.getCountry();
+        if(setLocale(localeName) && setLocaleNative(localeName)) return;
+        localeName = locale.getLanguage();
+        setLocale(localeName);
+        setLocaleNative(localeName);
+    }
+    public static boolean setLocale(String locale) {
+        String key = locales.containsKey(locale) ? locale : null;
+        Objects.requireNonNull(locales.get(key)).write(STRINGS);
+        return key != null;
+    }
+    @Keep public static native boolean setLocaleNative(String locale);
 }

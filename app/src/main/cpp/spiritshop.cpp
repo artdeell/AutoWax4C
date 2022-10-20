@@ -6,6 +6,7 @@
 #include <__threading_support>
 #include <android/log.h>
 #include "spiritshop.h"
+#include "translation.h"
 #include "includes/imgui/imgui.h"
 
 static bool ids_ok = false;
@@ -25,18 +26,8 @@ extern "C" void
 Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unused]] jclass clazz,
                                                         jobjectArray element_strings,
                                                         jobjectArray name_strings, jlongArray gotos) {
-    if(list != nullptr) {
-        for(jsize i = 0; i < list_size; i++) {
-            if(list[i] != nullptr) free(list[i]);
-        }
-        free(list);
-    }
-    if(sub_list != nullptr) {
-        for(jsize i = 0; i < list_size; i++) {
-            if(sub_list[i] != nullptr) free(sub_list[i]);
-        }
-        free(sub_list);
-    }
+    FreeStringArray(list, list_size);
+    FreeStringArray(sub_list, list_size);
     if(goto_list != nullptr)
         free(goto_list);
     list_size = env->GetArrayLength(element_strings);
@@ -48,20 +39,8 @@ Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unu
     memcpy(goto_list, ngotos, sizeof(jlong)*list_size);
     env->ReleaseLongArrayElements(gotos, ngotos, JNI_ABORT);
     for(jsize i = 0; i < list_size; i++) {
-        auto elementString = (jstring)env->GetObjectArrayElement(element_strings, i);
-        const char* elementChars = env->GetStringUTFChars(elementString, nullptr);
-        if(asprintf(&sub_list[i], "%s", elementChars) == -1) {
-            sub_list[i] = nullptr;
-        }
-        env->ReleaseStringUTFChars(elementString, elementChars);
-        env->DeleteLocalRef(elementString);
-        auto nameString = (jstring)env->GetObjectArrayElement(name_strings, i);
-        const char* nameChars = env->GetStringUTFChars(nameString, nullptr);
-        if(asprintf(&list[i], "%s", nameChars) == -1) {
-            list[i] = nullptr;
-        }
-        env->ReleaseStringUTFChars(nameString, nameChars);
-        env->DeleteLocalRef(nameString);
+        WriteStringOrNull(env, &sub_list[i], (jstring)env->GetObjectArrayElement(element_strings, i));
+        WriteStringOrNull(env, &list[i], (jstring)env->GetObjectArrayElement(name_strings, i));
     }
     list_done = true;
 }
@@ -103,24 +82,24 @@ void doMagikJNI(JNIEnv* env) {
 
 
 void ss_draw_net0() {
-    ImGui::TextUnformatted("Downloading...");
+    ImGui::TextUnformatted(locale_strings[SS_DOWNLOADING]);
 }
 void ss_draw_net4() {
     net_state = op = 0;
     ThreadWrapper(&doMagikJNI);
 }
 void ss_draw_net1() {
-    ImGui::Text("Failed to load: %s", net_init_failreason_chars);
-    if(ImGui::Button("Retry")) ss_draw_net4();
+    ImGui::Text(locale_strings[SS_LOAD_FAILED], net_init_failreason_chars);
+    if(ImGui::Button(locale_strings[G_RETRY])) ss_draw_net4();
 }
 float shop_compute_button_column_size() {
-    float size = ImGui::CalcTextSize("Go").x + ImGui::GetStyle().FramePadding.x * 4;
-        size += ImGui::CalcTextSize("Buy").x + ImGui::GetStyle().FramePadding.x * 4;
+    float size = ImGui::CalcTextSize(locale_strings[SS_OPEN]).x + ImGui::GetStyle().FramePadding.x * 4;
+        size += ImGui::CalcTextSize(locale_strings[SS_BUY]).x + ImGui::GetStyle().FramePadding.x * 4;
     return size;
 }
 void ss_draw_net2() {
     if (list_done) {
-        if(ImGui::Button("Back")) {
+        if(ImGui::Button(locale_strings[G_BACK])) {
             list_done = false;
             op = 2;
             ThreadWrapper(&doMagikJNI);
@@ -142,14 +121,14 @@ void ss_draw_net2() {
                 ImGui::Text("%s", sub_list[i]);
                 ImGui::TableSetColumnIndex(1);
                 ImGui::PushID(list[i]);
-                if (ImGui::Button("Go")) {
+                if (ImGui::Button(locale_strings[SS_OPEN])) {
                     list_done = false;
                     op = 1;
                     pushVal = goto_list[i];
                     ThreadWrapper(&doMagikJNI);
                 }
                 ImGui::SameLine();
-                if (ImGui::Button("Buy")) {
+                if (ImGui::Button(locale_strings[SS_BUY])) {
                     purchase_result_chars[0] = 0;
                     op = 3;
                     pushVal = goto_list[i];
@@ -161,12 +140,12 @@ void ss_draw_net2() {
             ImGui::EndTable();
         }
     } else {
-        ImGui::TextUnformatted("Loading...");
+        ImGui::TextUnformatted(locale_strings[G_LOADING]);
     }
 }
 void(*ns_draw[4])() = {ss_draw_net0, ss_draw_net1, ss_draw_net2, ss_draw_net4};
 void spiritshop_draw() {
-    ImGui::Begin("Spirit Shops", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+    ImGui::Begin(locale_strings[M_SPIRIT_SHOPS], nullptr, ImGuiWindowFlags_AlwaysAutoResize);
     if(ids_ok) {
         ns_draw[net_state]();
     }else{

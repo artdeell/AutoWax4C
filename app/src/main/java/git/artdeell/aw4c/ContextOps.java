@@ -5,11 +5,15 @@ import android.app.Application;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.res.Resources;
 import android.util.Log;
+
+import java.lang.reflect.Field;
 
 @Keep
 public class ContextOps {
-    static private ClipboardManager  clipboard;
+    static private ClipboardManager clipboard = null;
+    public static Resources skyResources = null;
     @SuppressLint({"PrivateApi", "DiscouragedPrivateApi"})
     @Keep
     public static boolean init() {
@@ -17,6 +21,11 @@ public class ContextOps {
         try {
             Class<?> activityThread = Class.forName("android.app.ActivityThread");
             Context context = (Context) activityThread.getDeclaredMethod("getApplication").invoke(activityThread.getDeclaredMethod("currentActivityThread").invoke(null));
+            try {
+                skyResources = (Resources) context.getClass().getDeclaredField("skyRes").get(context);
+            }catch (Exception e) {
+                e.printStackTrace();
+            }
             if(context == null) return false;
             clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
             return true;

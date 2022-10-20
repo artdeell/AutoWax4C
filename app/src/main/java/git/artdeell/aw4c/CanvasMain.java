@@ -3,6 +3,7 @@ package git.artdeell.aw4c;
 import git.artdeell.autowax.AutoWax;
 import git.artdeell.autowax.invitemanager.InviteManager;
 import git.artdeell.autowax.spiritshop.SpiritShop;
+import git.artdeell.autowax.worldquest.Spirits;
 
 @Keep
 public class CanvasMain {
@@ -89,6 +90,18 @@ public class CanvasMain {
     @Keep
     public static void init(int version, boolean isBeta) {
         AutoWax.initWithParameters(version, isBeta);
+    }
+    @Keep
+    public static void worldQuests(byte op, int idx) {
+        reauthorized();
+        switch(op) {
+            case 0:
+                Spirits.get(aw).load();
+                break;
+            case 1:
+                Spirits.get(aw).executeQuest(idx);
+                break;
+        }
     }
     @Keep private static native String[] getCredentials();
     @Keep public static native void goReauthorize();

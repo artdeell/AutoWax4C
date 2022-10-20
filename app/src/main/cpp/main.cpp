@@ -7,6 +7,8 @@
 #include "lights.h"
 #include "contextops.h"
 #include "invitemanager.h"
+#include "translation.h"
+#include "worldquests.h"
 #include "dlfake/fake_dlfcn.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
@@ -36,7 +38,7 @@ static jmethodID method_edemRun;
 static jmethodID method_loadClass;
 
 static pthread_mutex_t log_mutex;
-static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops, open_wl_collector, open_invitemanager;
+static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
@@ -97,6 +99,7 @@ void JNIWrapper(jniexec_t execm) {
     }
 }
 void reloadSession(JNIEnv *env) {
+    userWantsReauthorization = false;
     env->CallStaticVoidMethod(main_class, method_reauthorized);
 }
 void candleRun(JNIEnv* env) {
@@ -120,24 +123,26 @@ void Menu() {
         if(progressBarVal != -1)ImGui::ProgressBar(progressBarVal);
         if (userWantsReauthorization) {
             ImGui::TextUnformatted(
-                    "It seems like the current session was terminated. \nPress the button below when you are ready to continue.");
-            if (ImGui::Button("Reload session")) JNIWrapper(&reloadSession);
+                    locale_strings[M_SESSION_TERMINATED]);
+            if (ImGui::Button(locale_strings[M_SESSION_RELOAD])) JNIWrapper(&reloadSession);
         }
         if(userInterfaceShown) {
-            ImGui::Checkbox("Run candles", &enable_candles);
-            ImGui::Checkbox("Run quests", &enable_quests);
-            ImGui::Checkbox("Collect gifts", &enable_recv);
-            ImGui::Checkbox("Send gifts", &enable_send);
-            if (ImGui::Button("Run")) JNIWrapper(&candleRun);
+            ImGui::Checkbox(locale_strings[M_RUN_CANDLES], &enable_candles);
+            ImGui::Checkbox(locale_strings[M_RUN_QUESTS], &enable_quests);
+            ImGui::Checkbox(locale_strings[M_COLLECT_GIFTS], &enable_recv);
+            ImGui::Checkbox(locale_strings[M_SEND_GIFTS], &enable_send);
+            if (ImGui::Button(locale_strings[G_RUN])) JNIWrapper(&candleRun);
         }
-        ImGui::Checkbox("Spirit Shops", &open_spiritshops);
-        ImGui::Checkbox("Collect WL", &open_wl_collector);
-        ImGui::Checkbox("Invite Manager", &open_invitemanager);
+        ImGui::Checkbox(locale_strings[M_SPIRIT_SHOPS], &open_spiritshops);
+        ImGui::Checkbox(locale_strings[M_COLLECT_WL], &open_wl_collector);
+        ImGui::Checkbox(locale_strings[M_INVITE_MANAGER], &open_invitemanager);
+        ImGui::Checkbox(locale_strings[M_SPIRITS], &open_worldquests);
         drop_draw();
-        if(edemShown) if(ImGui::Button("Edem run"))  JNIWrapper(&edemRun);
+        if(edemShown) if(ImGui::Button(locale_strings[M_EDEM_RUN]))  JNIWrapper(&edemRun);
         if(open_spiritshops) spiritshop_draw();
         if(open_wl_collector) lights_draw();
         if(open_invitemanager) invitemanager_draw();
+        if(open_worldquests) worldquests_draw();
     }else{
         ImGui::Text("The mod did not load!");
     }
@@ -171,7 +176,17 @@ jni_getvms_t getVMFunction() {
     dlclose(library);
     return sym == nullptr ? getVMFunction_fake() : (jni_getvms_t) sym;
 }
+void (*original_ssl)(int64_t arg1, int64_t arg2, int64_t arg3);
+void hook_ssl(int64_t arg1, int64_t arg2, int64_t arg3) {
+    original_ssl(arg1, 0, 0);
+}
+void ssl() {
+    CipherBase *hook = (new CipherHook)->set_Callback((uintptr_t) &original_ssl)
+            ->set_Hook((uintptr_t) &hook_ssl)->set_Address(0xca0454, true);
+    hook->Fire();
+}
 void Init(){
+    //ssl();
     memset(log_strings, 0, sizeof(vm_string)*5);
     jsize cnt;
     JNI_GetCreatedJavaVMs_p = getVMFunction();
@@ -226,9 +241,11 @@ void Init(){
     method_reauthorized = env->GetStaticMethodID(main_class, "reauthorized","()V");
     method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZ)V");
     method_edemRun = env->GetStaticMethodID(mainClass, "edemRun", "()V");
+    translation_init(env);
     spiritshop_initIDs(env);
     lights_initIDs(env);
     contextops_initIDs(env);
+    worldquests_initIDs(env);
     invitemanager_initIDs(env);
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
@@ -304,5 +321,22 @@ const JNINativeMethod methods[] = {
 };
 void registerNatives(JNIEnv* env) {
     env->RegisterNatives(main_class, methods, sizeof(methods)/sizeof(methods[0]));
+}
+void FreeStringArray(char** list, jsize list_size) {
+    if(list != nullptr) {
+        for(jsize i = 0; i < list_size; i++) {
+            if(list[i] != nullptr) free(list[i]);
+        }
+        free(list);
+    }
+}
+void WriteStringOrNull(JNIEnv* env, char** string, jstring jstring) {
+    if(jstring == nullptr) *string = nullptr;
+    const char *idChars = env->GetStringUTFChars(jstring, nullptr);
+    if (asprintf(string, "%s", idChars) == -1) {
+        *string = nullptr;
+    }
+    env->ReleaseStringUTFChars(jstring, idChars);
+    env->DeleteLocalRef(jstring);
 }
 

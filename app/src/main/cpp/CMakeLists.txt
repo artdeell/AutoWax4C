@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.19.0)
-set(CMAKE_BUILD_TYPE Release)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
 set(ANDROID_PLATFORM 31)
 set(CIPHER_URL https://github.com/lukas0x1/SML-filehost/releases/download/v1.2.0/libciphered.so)
 set(CIPHER_PATH ${CMAKE_BINARY_DIR}/libciphered.so)
@@ -13,7 +13,7 @@ string(LENGTH ${CUR_NAME} CUR_NAME_LEN)
 string(SUBSTRING ${CUR_NAME} 3 ${CUR_NAME_LEN} CUR_NAME) #ugly but there's no lazy regex support
 string(REPLACE ".so" "" CUR_NAME ${CUR_NAME})
 add_compile_options("-fvisibility=hidden")
-add_link_options("-s")
+#add_link_options("-s")
 add_library( # Sets the name of the library.
         ${CUR_NAME}
         SHARED
@@ -22,6 +22,8 @@ add_library( # Sets the name of the library.
         lights.cpp
         contextops.cpp
         invitemanager.cpp
+        translation.cpp
+        worldquests.cpp
         dlfake/fake_dlfcn.c
         ${CMAKE_SOURCE_DIR}/classes_dex.o
         )
