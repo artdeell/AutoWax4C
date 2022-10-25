@@ -128,8 +128,8 @@ public class AutoWax {
         int candleCount = currency.optInt(destination, 0);
         if (waxCount >= rate) {
             JSONObject forgeRq = genInitial();
-            forgeRq.put("currency", source);
-            forgeRq.put("forge_currency", destination);
+            forgeRq.put("currency", destination);
+            forgeRq.put("forge_currency", source);
             forgeRq.put("count", waxCount / rate);
             forgeRq.put("cost", rate);
             JSONObject resp = doPost("/account/buy_candle_wax", forgeRq);

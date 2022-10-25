@@ -60,7 +60,7 @@ func Start(){
 }
 
 void get_Auth(char *TgcUUID, char *AccountSessionToken){
-    uintptr_t address =  Cipher::CipherScan("\x00\x00\x00\xF0\x00\x00\x00\x00\x13\x00\x00\xF9\x00\x00\x00\x97\x00\xE4\x00\x6F", "??xx????x??x???xxxxx");
+    uintptr_t address =  Cipher::CipherScan("\x48\x7F\x00\x00\x00\x10\x80\x52\x13\x00\x00\xF9\x00\x00\xED\x97", "xxx?xxxx???x??xx");
     if(address == 0) {
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 0 failed");
         abort();
