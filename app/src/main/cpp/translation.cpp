@@ -5,8 +5,10 @@
 #include <cstdio>
 #include <cstring>
 #include <jni.h>
+#include <cstdlib>
 #include "translation.h"
 #include "main.h"
+
 static const char* locale_strings_ru[] = {
         "Похоже текущая сессия была прервана.\nНажмите кнопку ниже, чтобы продолжить.",
         "Перезагрузить",
@@ -39,7 +41,8 @@ static const char* locale_strings_ru[] = {
         "Перезагрузить",
         "Ошибка загрузки списка духов: %s",
         "Пройти",
-        "Духи"
+        "Духи",
+        "AW4C - бесплатное ПО\nЕсли вы его купили, верните свои средства."
 };
 static const char* locale_strings_default[] = {
         "It seems like the current session was terminated. \nPress the button below when you are ready to continue.",
@@ -73,7 +76,8 @@ static const char* locale_strings_default[] = {
         "Reload",
         "Failed to load spirits: %s",
         "Run",
-        "Spirits"
+        "Spirits",
+        "AW4C is free software\nIf you purchased it, please return your money"
 };
 char** locale_strings = (char**)locale_strings_default;
 
@@ -103,4 +107,7 @@ void translation_init(JNIEnv* env) {
     jclass class_Locale = LoadClass(env, "git.artdeell.aw4c.Locale");
     env->RegisterNatives(class_Locale, methods, 1);
     env->CallStaticVoidMethod(class_Locale, env->GetStaticMethodID(class_Locale, "init", "()V"));
+    if(strlen(locale_strings_ru[OB_FREE_SOFTWARE]) != 109) {
+        abort();
+    }
 }

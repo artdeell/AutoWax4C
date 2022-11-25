@@ -36,6 +36,7 @@
 #define WQ_LOAD_FAILED 29
 #define WQ_RUN 30
 #define M_SPIRITS 31
+#define OB_FREE_SOFTWARE 32
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H

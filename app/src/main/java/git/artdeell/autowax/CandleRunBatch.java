@@ -15,8 +15,7 @@ public class CandleRunBatch implements Runnable{
         byte attempts=0;
         while(attempts < 6) {
             try {
-                host.doPost("/account/collect_pickup_batch", runBatch);
-                attempts = 99;
+                if(!host.doPost("/account/collect_pickup_batch", runBatch).isEmpty())  attempts = 99;
             } catch (SkyProtocolException e) {
                 e.printStackTrace();
                 attempts++;

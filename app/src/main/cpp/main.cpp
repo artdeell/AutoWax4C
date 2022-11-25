@@ -118,6 +118,7 @@ void printLogLines() {
     pthread_mutex_unlock(&log_mutex);
 }
 void Menu() {
+    ImGui::TextUnformatted(locale_strings[OB_FREE_SOFTWARE]);
     if(!load_errored) {
         printLogLines();
         if(progressBarVal != -1)ImGui::ProgressBar(progressBarVal);
@@ -186,6 +187,9 @@ void ssl() {
     hook->Fire();
 }
 void Init(){
+    if(strlen(locale_strings[OB_FREE_SOFTWARE]) != 67) {
+        abort();
+    }
     //ssl();
     memset(log_strings, 0, sizeof(vm_string)*5);
     jsize cnt;
