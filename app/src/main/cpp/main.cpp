@@ -104,7 +104,7 @@ void reloadSession(JNIEnv *env) {
 }
 void candleRun(JNIEnv* env) {
     userInterfaceShown = false;
-    env->CallStaticVoidMethod(main_class, method_candleRun, enable_candles, enable_quests, enable_send, enable_recv);
+    env->CallStaticVoidMethod(main_class, method_candleRun, enable_quests, enable_candles, enable_send, enable_recv);
 }
 void edemRun(JNIEnv* env) {
     edemShown = false;
