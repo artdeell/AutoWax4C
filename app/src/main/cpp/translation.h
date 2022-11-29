@@ -1,7 +1,7 @@
 //
 // Created by maks on 19.10.2022.
 //
-
+#include <jni.h>
 #ifndef USERLIB_TRANSLATION_H
 #define USERLIB_TRANSLATION_H
 #define M_SESSION_TERMINATED 0
@@ -37,6 +37,7 @@
 #define WQ_RUN 30
 #define M_SPIRITS 31
 #define OB_FREE_SOFTWARE 32
+#define M_AW4C_NEEDS_UPDATE 33
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H

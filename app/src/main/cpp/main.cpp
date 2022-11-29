@@ -45,7 +45,7 @@ static _Atomic bool userInterfaceShown = true;
 static _Atomic bool edemShown = true;
 static _Atomic float progressBarVal = -1;
 static vm_string log_strings[6];
-
+static char* crash_string = "The mod did not load!";
 
 
 extern char _binary_classes_dex_start[];
@@ -60,10 +60,12 @@ func Start(){
 }
 
 void get_Auth(char *TgcUUID, char *AccountSessionToken){
-    uintptr_t address =  Cipher::CipherScan("\x48\x7F\x00\x00\x00\x10\x80\x52\x13\x00\x00\xF9\x00\x00\xED\x97", "xxx?xxxx???x??xx");
+    uintptr_t address =  Cipher::CipherScan("\x00\x00\x00\x00\x00\x10\x80\x52\x13\xC9\x02\xF9\xE6\x63\xED\x97\x00\xE4\x00\x6F", "????xxxxx??x??xxxxxx");
     if(address == 0) {
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 0 failed");
-        abort();
+        crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
+        load_errored = true;
+        return;
     }
     uintptr_t buf = 0;
     memcpy(&buf, (void *)address, 4);
@@ -76,7 +78,9 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
     address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\xF0\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x41\xF9", "??xx??xx??xx??xxx?xx");
     if(address == 0) {
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 1 failed");
-        abort();
+        crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
+        load_errored = true;
+        return;
     }
     memcpy(&buf, (void *)address, 4);
     CipherArm64::decode_ldrstr_uimm(buf, &rel);
@@ -145,7 +149,7 @@ void Menu() {
         if(open_invitemanager) invitemanager_draw();
         if(open_worldquests) worldquests_draw();
     }else{
-        ImGui::Text("The mod did not load!");
+        ImGui::TextUnformatted(crash_string);
     }
 }
 jclass LoadClass(JNIEnv* env, const char* name) {

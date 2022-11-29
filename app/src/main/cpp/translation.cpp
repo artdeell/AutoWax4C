@@ -42,7 +42,8 @@ static const char* locale_strings_ru[] = {
         "Ошибка загрузки списка духов: %s",
         "Пройти",
         "Духи",
-        "AW4C - бесплатное ПО\nЕсли вы его купили, верните свои средства."
+        "AW4C - бесплатное ПО\nЕсли вы его купили, верните свои средства.",
+        "Ой! Похоже нужно обновление..."
 };
 static const char* locale_strings_default[] = {
         "It seems like the current session was terminated. \nPress the button below when you are ready to continue.",
@@ -77,7 +78,8 @@ static const char* locale_strings_default[] = {
         "Failed to load spirits: %s",
         "Run",
         "Spirits",
-        "AW4C is free software\nIf you purchased it, please return your money"
+        "AW4C is free software\nIf you purchased it, please return your money",
+        "Whoops! Looks like we need an update..."
 };
 char** locale_strings = (char**)locale_strings_default;
 
