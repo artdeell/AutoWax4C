@@ -75,7 +75,7 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
     memcpy(&buf, (void *)(address + 8), 4);
     CipherArm64::decode_ldrstr_uimm(buf, &rel);
     uintptr_t *Game = *(uintptr_t **)(((address >> 12) << 12) + addr + rel);
-    address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\xF0\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x41\xF9", "??xx??xx??xx??xxx?xx");
+    address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\xF0\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x41\xF9", "??xx??xx??xx??xxx??x");
     if(address == 0) {
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 1 failed");
         crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
