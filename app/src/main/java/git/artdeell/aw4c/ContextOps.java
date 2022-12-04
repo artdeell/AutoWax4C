@@ -5,6 +5,7 @@ import android.app.Application;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.content.res.Resources;
 import android.util.Log;
 
@@ -14,6 +15,7 @@ import java.lang.reflect.Field;
 public class ContextOps {
     static private ClipboardManager clipboard = null;
     public static Resources skyResources = null;
+    public static SharedPreferences sharedPreferences;
     @SuppressLint({"PrivateApi", "DiscouragedPrivateApi"})
     @Keep
     public static boolean init() {
@@ -28,6 +30,7 @@ public class ContextOps {
             }
             if(context == null) return false;
             clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
+            sharedPreferences = context.getSharedPreferences("aw4c_prefs", Context.MODE_PRIVATE);
             return true;
         }catch (Exception e) {
             Log.i("ContextOps", "Failed to initialize", e);

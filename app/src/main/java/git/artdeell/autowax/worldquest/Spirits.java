@@ -28,7 +28,7 @@ public class Spirits {
         this.host = host;
     }
 
-    private static String dump(String path) throws IOException {
+   public static String dump(String path) throws IOException {
         InputStream is = ContextOps.skyResources.getAssets().open(path);
         StringBuilder sb = new StringBuilder();
         byte[] buf = new byte[512];int c;

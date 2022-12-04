@@ -41,5 +41,6 @@ public class LocaleRussian implements LocaleInt{
         strings[Locale.WQ_NO_RESPONSE] = "Нет ответа";
         strings[Locale.WQ_SKY_RES_MISSING] = "Ошибка чтения ресурсов Sky";
         strings[Locale.WQ_COLLECTIBLE_FAILED] = "Ошибка сбора духа %s";
+        strings[Locale.C_RUN_QUEST_RESULT] = "Результат сбора экстра: %s";
     }
 }

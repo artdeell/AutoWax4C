@@ -43,5 +43,8 @@ public class LocaleDefault implements LocaleInt{
         strings[Locale.WQ_NO_RESPONSE] = "No response";
         strings[Locale.WQ_SKY_RES_MISSING] = "Failed to read Sky resources";
         strings[Locale.WQ_COLLECTIBLE_FAILED] = "Failed to collect spirit %s";
+        strings[Locale.C_RUN_QUEST_RESULT]= "Extra collect result: %s";
+        strings[Locale.C_RUN_QUEST_FAILED] = "Failed to run extra: %s";
+        strings[Locale.FL_UNNAMED] = "<unnamed>";
     }
 }

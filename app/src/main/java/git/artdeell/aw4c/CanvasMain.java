@@ -1,6 +1,7 @@
 package git.artdeell.aw4c;
 
 import git.artdeell.autowax.AutoWax;
+import git.artdeell.autowax.heartlist.HeartList;
 import git.artdeell.autowax.invitemanager.InviteManager;
 import git.artdeell.autowax.spiritshop.SpiritShop;
 import git.artdeell.autowax.worldquest.Spirits;
@@ -14,9 +15,10 @@ public class CanvasMain {
         aw.resetSession(creds[0], creds[1]);
     }
     @Keep
-    public static void candleRun(boolean doQuests, boolean doCandles, boolean doSend, boolean doReceive) {
+    public static void candleRun(boolean doQuests, boolean doCandles, boolean doSend, boolean doReceive, boolean fragments) {
         new Thread(()->{
             reauthorized();
+            if(fragments) aw.doRaces(false);
             if(doCandles) aw.doCandleRun();
             if(doQuests) aw.doQuests();
             if(doSend) aw.runGift();
@@ -100,6 +102,21 @@ public class CanvasMain {
                 break;
             case 1:
                 Spirits.get(aw).executeQuest(idx);
+                break;
+        }
+    }
+    @Keep
+    public static void heartSelector(byte op, int idx) {
+        reauthorized();
+        switch(op) {
+            case 0:
+                HeartList.get(aw).reload();
+                break;
+            case 1:
+                HeartList.get(aw).add(idx);
+                break;
+            case 2:
+                HeartList.get(aw).rem(idx);
                 break;
         }
     }

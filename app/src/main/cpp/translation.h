@@ -38,6 +38,13 @@
 #define M_SPIRITS 31
 #define OB_FREE_SOFTWARE 32
 #define M_AW4C_NEEDS_UPDATE 33
+#define M_FRAGMENTS 34
+#define M_HEART_SELECTOR 35
+#define H_FAILED_TO_LOAD_FRIENDS 36
+#define H_ADD 37
+#define H_REMOVE 38
+#define H_SOCIOPATH 39
+#define H_REFRESH 40
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H

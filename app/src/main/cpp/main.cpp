@@ -9,6 +9,7 @@
 #include "invitemanager.h"
 #include "translation.h"
 #include "worldquests.h"
+#include "heartselector.h"
 #include "dlfake/fake_dlfcn.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
@@ -38,7 +39,9 @@ static jmethodID method_edemRun;
 static jmethodID method_loadClass;
 
 static pthread_mutex_t log_mutex;
-static bool enable_candles, enable_quests, enable_send, enable_recv, open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests;
+static bool enable_candles, enable_quests, enable_send, enable_recv, enable_fragmetns,
+open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests,
+open_heaerrtrades;
 static bool load_errored = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
@@ -108,7 +111,7 @@ void reloadSession(JNIEnv *env) {
 }
 void candleRun(JNIEnv* env) {
     userInterfaceShown = false;
-    env->CallStaticVoidMethod(main_class, method_candleRun, enable_quests, enable_candles, enable_send, enable_recv);
+    env->CallStaticVoidMethod(main_class, method_candleRun, enable_quests, enable_candles, enable_send, enable_recv, enable_fragmetns);
 }
 void edemRun(JNIEnv* env) {
     edemShown = false;
@@ -132,11 +135,16 @@ void Menu() {
             if (ImGui::Button(locale_strings[M_SESSION_RELOAD])) JNIWrapper(&reloadSession);
         }
         if(userInterfaceShown) {
+            ImGui::Checkbox(locale_strings[M_FRAGMENTS], &enable_fragmetns);
             ImGui::Checkbox(locale_strings[M_RUN_CANDLES], &enable_candles);
             ImGui::Checkbox(locale_strings[M_RUN_QUESTS], &enable_quests);
             ImGui::Checkbox(locale_strings[M_COLLECT_GIFTS], &enable_recv);
             ImGui::Checkbox(locale_strings[M_SEND_GIFTS], &enable_send);
             if (ImGui::Button(locale_strings[G_RUN])) JNIWrapper(&candleRun);
+            if(contextops_available()) {
+                ImGui::Checkbox(locale_strings[M_HEART_SELECTOR], &open_heaerrtrades);
+                if(open_heaerrtrades) heartselector_draw();
+            }
         }
         ImGui::Checkbox(locale_strings[M_SPIRIT_SHOPS], &open_spiritshops);
         ImGui::Checkbox(locale_strings[M_COLLECT_WL], &open_wl_collector);
@@ -247,7 +255,7 @@ void Init(){
     registerNatives(env);
 
     method_reauthorized = env->GetStaticMethodID(main_class, "reauthorized","()V");
-    method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZ)V");
+    method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZZ)V");
     method_edemRun = env->GetStaticMethodID(mainClass, "edemRun", "()V");
     translation_init(env);
     spiritshop_initIDs(env);
@@ -255,6 +263,7 @@ void Init(){
     contextops_initIDs(env);
     worldquests_initIDs(env);
     invitemanager_initIDs(env);
+    heartselector_initIDs(env);
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }

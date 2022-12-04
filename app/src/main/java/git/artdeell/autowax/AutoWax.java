@@ -2,7 +2,9 @@ package git.artdeell.autowax;
 
 import android.util.Log;
 
+import git.artdeell.autowax.worldquest.Spirits;
 import git.artdeell.aw4c.CanvasMain;
+import git.artdeell.aw4c.ContextOps;
 import git.artdeell.aw4c.Locale;
 import local.json.JSONArray;
 import local.json.JSONException;
@@ -15,8 +17,10 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -145,7 +149,69 @@ public class AutoWax {
             CanvasMain.submitLogString(Locale.get(localeString, candleCount));
         }
     }
-
+    private void execQuest(String qName, float bonus_percent) throws SkyProtocolException{
+        JSONObject questRq = genInitial();
+        questRq.put("name", qName);
+        questRq.put("bonus_percent", bonus_percent);
+        JSONObject rsp = doPost("/account/claim_quest_reward", questRq);
+        CanvasMain.submitLogString(Locale.get(Locale.C_RUN_QUEST_RESULT, rsp.optString("result", "Unknown error")));
+    }
+    private void execQuests() throws Exception{
+        if(ContextOps.skyResources == null) {
+            CanvasMain.submitLogString(Locale.get(Locale.WQ_SKY_RES_MISSING));
+            return;
+        }
+        JSONArray quests = doPost("/account/get_account_world_quests",genInitial()).optJSONArray("set_world_quests");
+        JSONArray gameQuests = new JSONArray(Spirits.dump("Data/Resources/WorldQuestDefs.json"));
+        HashMap<String, JSONObject> questsByName = new HashMap<>();
+        for(Object o : quests) {
+            JSONObject quest = (JSONObject) o;
+            questsByName.put(quest.optString("world_quest_def_id", null), quest);
+        }
+        for(Object o : gameQuests) {
+            JSONObject quest = (JSONObject) o;
+            String questId;
+            if((questId = checkQuest(questsByName, quest)) != null) {
+                Log.i("aw4c", "quest: "+questId );
+                execQuest(questId, quest.optInt("bonus_amount", 0) != 0 ? 1 : 0);
+            }
+        }
+    }
+    private String checkQuest(HashMap<String, JSONObject> questsByName, JSONObject quest) {
+        String qid = quest.optString("id");
+        if(qid == null) return null;
+        JSONObject playerQuest = questsByName.get(qid);
+        if(playerQuest != null && playerQuest.optLong("cooldown_over_time", 0) > (System.currentTimeMillis() / 1000))
+            return null;
+        if((quest.optInt("reward_amount_1") != 0 || quest.optInt("reward_amount_2") != 0)
+                && !(quest.getBoolean("once_lifetime") || quest.getBoolean("on_until_first_done")))
+            return qid;
+        else return null;
+    }
+    private void execQuestList(String... questsNames) throws SkyProtocolException {
+        JSONArray quests = doPost("/account/get_account_world_quests",genInitial()).optJSONArray("set_world_quests");
+        HashMap<String, JSONObject> questsByName = new HashMap<>();
+        for(Object o : quests) {
+            JSONObject quest = (JSONObject) o;
+            questsByName.put(quest.optString("world_quest_def_id", null), quest);
+        }
+        for(int i = 0; i < questsNames.length; i++) {
+            JSONObject playerQuest = questsByName.get(questsNames[i]);
+            if(playerQuest != null && playerQuest.optLong("cooldown_over_time", 0) > (System.currentTimeMillis() / 1000)) continue;
+            execQuest(questsNames[i], 1);
+            CanvasMain.submitProgressBar(i, questsNames.length-1);
+        }
+    }
+    public void doRaces(boolean extraRaces) {
+        try {
+            CanvasMain.submitProgressBar(0, 1);
+            execQuestList("sunset_race", "sunset_flyrace", "sunset_yeti_race");
+            CanvasMain.submitProgressBar(0, -1);
+            //if(extraRaces) execQuest("test_multilevel_race1", 1);
+        }catch (Exception e) {
+            CanvasMain.submitLogString(Locale.get(Locale.C_CONVERSION_FAILED, e.toString()));
+        }
+    }
     public void doCandleRun() {
         CRArray.init();
         ThreadPoolExecutor tpe = new ThreadPoolExecutor(4, 4, 200, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
@@ -263,6 +329,9 @@ public class AutoWax {
 
     public void runGift() {
         try {
+            Set<String> tradeBuddies = ContextOps.sharedPreferences != null ?
+                    ContextOps.sharedPreferences.getStringSet("trade_buddies", null) :
+                    null;
             JSONObject friendRq = genInitial();
             friendRq.put("max", 1024);
             friendRq.put("sort_ver", 1);
@@ -284,9 +353,16 @@ public class AutoWax {
             ThreadPoolExecutor tpe = new ThreadPoolExecutor(4, 4, 200, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
             for (Object o : friendList) {
                 JSONObject friend = (JSONObject) o;
-                Gift cobj = new Gift(friend.getString("friend_id"), "gift_heart_wax", friend.has("nickname") ? friend.getString("nickname") : "<unknown>");
+                String friendId = friend.getString("friend_id");
+                String friendName = friend.has("nickname") ? friend.getString("nickname") :  Locale.get(Locale.FL_UNNAMED);
+                Gift cobj = new Gift(friendId, "gift_heart_wax", friendName);
                 if (!alreadySent.contains(cobj))
-                    tpe.execute(new GiftTask(cobj, this));
+                    tpe.execute(new GiftTask(cobj, this, false));
+                if(tradeBuddies != null && tradeBuddies.contains(friendId)) {
+                    Gift paid = new Gift(friendId, "gift", friendName);
+                    if(!alreadySent.contains(paid))
+                        tpe.execute(new GiftTask(paid, this, true));
+                }
             }
             tpe.shutdown();
             tpe.awaitTermination(Long.MAX_VALUE, TimeUnit.DAYS);

@@ -8,11 +8,13 @@ public class GiftTask implements Runnable{
     public final String friendId;
     public final String nickname;
     public final String giftType;
-    public GiftTask(Gift cobj, AutoWax host) {
+    public final boolean paid;
+    public GiftTask(Gift cobj, AutoWax host, boolean paid) {
         this.host = host;
         this.friendId = cobj.targetId;
         this.nickname = cobj.username;
         this.giftType = cobj.giftType;
+        this.paid = paid;
     }
 
     @Override
@@ -22,7 +24,7 @@ public class GiftTask implements Runnable{
             JSONObject giftRq = host.genInitial();
             giftRq.put("target", friendId);
             giftRq.put("gift_type", giftType);
-            String result = host.doPost("/service/relationship/api/v1/free_gifts/send",giftRq).optString("result", "Unknown");
+            String result = host.doPost(paid ? "/account/send_message" : "/service/relationship/api/v1/free_gifts/send",giftRq).optString("result", "Unknown");
             CanvasMain.submitLogString(nickname + ": " + result);
         }catch(Exception e) {
             e.printStackTrace();

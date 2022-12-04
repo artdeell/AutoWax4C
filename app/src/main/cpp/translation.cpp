@@ -43,7 +43,14 @@ static const char* locale_strings_ru[] = {
         "Пройти",
         "Духи",
         "AW4C - бесплатное ПО\nЕсли вы его купили, верните свои средства.",
-        "Ой! Похоже нужно обновление..."
+        "Ой! Похоже нужно обновление...",
+        "Собрать гонки",
+        "Настройки торговли сердцами",
+        "Ошибка загрузки списка друзей",
+        "Добавить",
+        "Убрать",
+        "Зачем ты вообще играешь в эту игру?",
+        "Перезагрузить"
 };
 static const char* locale_strings_default[] = {
         "It seems like the current session was terminated. \nPress the button below when you are ready to continue.",
@@ -79,7 +86,15 @@ static const char* locale_strings_default[] = {
         "Run",
         "Spirits",
         "AW4C is free software\nIf you purchased it, please return your money",
-        "Whoops! Looks like we need an update..."
+        "Whoops! Looks like we need an update...",
+        "Collect races",
+        "Heart trade config",
+        "Failed to load friend list",
+        "Add",
+        "Remove",
+        "Why are you even playing at this point?",
+        "Refresh"
+
 };
 char** locale_strings = (char**)locale_strings_default;
 
