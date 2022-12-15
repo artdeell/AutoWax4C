@@ -2,6 +2,8 @@
 // Created by maks on 14.10.2022.
 //
 #include <android/log.h>
+#include <unistd.h>
+#include "includes/fileselector.h"
 #include "includes/imgui/imgui.h"
 #include "lights.h"
 #include "main.h"
@@ -43,6 +45,15 @@ int wli_cursor_pos(ImGuiInputTextCallbackData* data) {
     cursorPos = data->CursorPos;
     return 0;
 }
+
+void load_lights(int fd) {
+    if(fd != -1) {
+        memset(wl_input, 0, 16384);
+        read(fd, wl_input, 16384);
+        close(fd);
+    }
+}
+
 void lights_draw() {
 
     ImGui::Begin(locale_strings[M_COLLECT_WL]);
@@ -71,6 +82,9 @@ void lights_draw() {
             if(ImGui::Button(locale_strings[G_PASTE])) {
                 contextops_getClipboard(wl_input, (size_t)cursorPos, 16384);
             }
+        }
+        if(ImGui::Button(locale_strings[L_LOAD_FROM_FILE])) {
+            requestFile("text/plain", load_lights, false);
         }
     } else {
         ImGui::TextUnformatted(locale_strings[L_COLLECTOR_RUNNING]);

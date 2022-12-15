@@ -50,7 +50,8 @@ static const char* locale_strings_ru[] = {
         "Добавить",
         "Убрать",
         "Зачем ты вообще играешь в эту игру?",
-        "Перезагрузить"
+        "Перезагрузить",
+        "Загрузить из файла"
 };
 static const char* locale_strings_default[] = {
         "It seems like the current session was terminated. \nPress the button below when you are ready to continue.",
@@ -93,7 +94,8 @@ static const char* locale_strings_default[] = {
         "Add",
         "Remove",
         "Why are you even playing at this point?",
-        "Refresh"
+        "Refresh",
+        "Load from file"
 
 };
 char** locale_strings = (char**)locale_strings_default;

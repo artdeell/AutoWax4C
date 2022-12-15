@@ -45,6 +45,7 @@
 #define H_REMOVE 38
 #define H_SOCIOPATH 39
 #define H_REFRESH 40
+#define L_LOAD_FROM_FILE 41
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H
