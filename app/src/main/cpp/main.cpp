@@ -84,7 +84,11 @@ void* get_gameptr() {
 
 void get_Auth(char *TgcUUID, char *AccountSessionToken){
     auto* Game = (uintptr_t*)get_gameptr();
-    if(Game == nullptr) return;
+    if(Game == nullptr) {
+        TgcUUID[0] = 0;
+        AccountSessionToken[0] = 0;
+        return;
+    }
     uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
     uintptr_t buf;
     int32_t rel;
@@ -92,6 +96,8 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 1 failed");
         crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
         load_errored = true;
+        TgcUUID[0] = 0;
+        AccountSessionToken[0] = 0;
         return;
     }
     memcpy(&buf, (void *)address, 4);
@@ -313,6 +319,7 @@ Java_git_artdeell_aw4c_CanvasMain_getCredentials(JNIEnv *env, [[maybe_unused]]jc
     char user[64];
     char session[64];
     get_Auth(user, session);
+    if(user[0] == 0 && session[0] == 0) return nullptr;
     jobjectArray credsArray = env->NewObjectArray(2, class_String, nullptr);
     env->SetObjectArrayElement(credsArray, 0, env->NewStringUTF(user));
     env->SetObjectArrayElement(credsArray, 1, env->NewStringUTF(session));

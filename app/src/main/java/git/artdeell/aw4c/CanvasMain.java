@@ -14,6 +14,7 @@ public class CanvasMain {
     @Keep
     public static void reauthorized() {
         String[] creds = getCredentials();
+        if(creds == null) return;
         aw.resetSession(creds[0], creds[1]);
     }
     @Keep

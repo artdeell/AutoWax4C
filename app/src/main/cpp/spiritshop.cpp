@@ -110,7 +110,7 @@ void ss_draw_net2() {
             ImGui::SameLine();
             if(ImGui::Button("OK")) purchase_result_chars[0] = 0;
         }
-        if (ImGui::BeginTable("#spirit_shop", 2)) {
+        if (ImGui::BeginTable("#spirit_shop", 2, ImGuiTableFlags_ScrollX)) {
             float width = shop_compute_button_column_size();
             ImGui::TableSetupColumn("names", ImGuiTableColumnFlags_WidthStretch, 1);
             ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthFixed, width);
@@ -139,6 +139,7 @@ void ss_draw_net2() {
             }
             ImGui::EndTable();
         }
+        ImGui::EndChild();
     } else {
         ImGui::TextUnformatted(locale_strings[G_LOADING]);
     }
