@@ -25,6 +25,7 @@ add_library( # Sets the name of the library.
         translation.cpp
         worldquests.cpp
         heartselector.cpp
+        changelevel.cpp
         dlfake/fake_dlfcn.c
         ${CMAKE_SOURCE_DIR}/classes_dex.o
         )
@@ -50,6 +51,7 @@ target_link_libraries(
         ${CUR_NAME}
         "${CIPHER_PATH}"
         ${log-lib}
+        android
         )
 
 add_custom_command(

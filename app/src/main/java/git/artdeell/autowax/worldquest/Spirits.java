@@ -29,7 +29,7 @@ public class Spirits {
     }
 
    public static String dump(String path) throws IOException {
-        InputStream is = ContextOps.skyResources.getAssets().open(path);
+        InputStream is = ContextOps.getAssetManager().open(path);
         StringBuilder sb = new StringBuilder();
         byte[] buf = new byte[512];int c;
         while ((c = is.read(buf)) != -1) {
@@ -40,7 +40,7 @@ public class Spirits {
     }
 
     public void load() {
-        if(ContextOps.skyResources == null) {
+        if(!ContextOps.hasAssets()) {
             onLoadResult(Locale.get(Locale.WQ_SKY_RES_MISSING));
             return;
         }

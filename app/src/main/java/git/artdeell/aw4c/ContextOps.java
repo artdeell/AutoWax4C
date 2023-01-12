@@ -6,15 +6,18 @@ import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.res.AssetManager;
 import android.content.res.Resources;
 import android.util.Log;
 
 import java.lang.reflect.Field;
+import java.util.Arrays;
 
 @Keep
 public class ContextOps {
     static private ClipboardManager clipboard = null;
-    public static Resources skyResources = null;
+    private static Resources skyResources = null;
+    private static AssetManager assetManager = null;
     public static SharedPreferences sharedPreferences;
     @SuppressLint({"PrivateApi", "DiscouragedPrivateApi"})
     @Keep
@@ -28,6 +31,7 @@ public class ContextOps {
             }catch (Exception e) {
                 e.printStackTrace();
             }
+            if(skyResources != null) assetManager = skyResources.getAssets();
             if(context == null) return false;
             clipboard = (ClipboardManager) context.getSystemService(Context.CLIPBOARD_SERVICE);
             sharedPreferences = context.getSharedPreferences("aw4c_prefs", Context.MODE_PRIVATE);
@@ -49,5 +53,16 @@ public class ContextOps {
     @Keep
     public static void setClipboard(String clipboard_string) {
         clipboard.setPrimaryClip(ClipData.newPlainText("Canvas Copy", clipboard_string));
+    }
+
+    @Keep
+    public static boolean hasAssets() {
+        return skyResources != null && assetManager != null;
+    }
+    
+    @Keep
+    public static AssetManager getAssetManager() {
+
+        return assetManager;
     }
 }

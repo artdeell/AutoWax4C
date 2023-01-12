@@ -157,7 +157,7 @@ public class AutoWax {
         CanvasMain.submitLogString(Locale.get(Locale.C_RUN_QUEST_RESULT, rsp.optString("result", "Unknown error")));
     }
     private void execQuests() throws Exception{
-        if(ContextOps.skyResources == null) {
+        if(!ContextOps.hasAssets()) {
             CanvasMain.submitLogString(Locale.get(Locale.WQ_SKY_RES_MISSING));
             return;
         }

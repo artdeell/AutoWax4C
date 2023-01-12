@@ -9,7 +9,7 @@
 #include "translation.h"
 #include "includes/imgui/imgui.h"
 
-static bool ids_ok = false;
+static bool context_operable = false;
 static bool list_done = false;
 
 static jsize list_size = 0;
@@ -74,7 +74,7 @@ void spiritshop_initIDs(JNIEnv* env) {
     env->RegisterNatives(class_SpiritShop, methods, sizeof(methods)/sizeof(methods[0]));
     method_spiritShop = env->GetStaticMethodID(main_class, "spiritShop", "(BJ)V");
     if(method_spiritShop == nullptr) return;
-    ids_ok = true;
+    context_operable = true;
 }
 void doMagikJNI(JNIEnv* env) {
     env->CallStaticVoidMethod(main_class, method_spiritShop,(char) op, (jlong) pushVal);
@@ -146,7 +146,7 @@ void ss_draw_net2() {
 void(*ns_draw[4])() = {ss_draw_net0, ss_draw_net1, ss_draw_net2, ss_draw_net4};
 void spiritshop_draw() {
     ImGui::Begin(locale_strings[M_SPIRIT_SHOPS], nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-    if(ids_ok) {
+    if(context_operable) {
         ns_draw[net_state]();
     }else{
         ImGui::TextUnformatted("Failed to initialize");

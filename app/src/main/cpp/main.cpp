@@ -10,6 +10,7 @@
 #include "translation.h"
 #include "worldquests.h"
 #include "heartselector.h"
+#include "changelevel.h"
 #include "dlfake/fake_dlfcn.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
@@ -40,9 +41,10 @@ static jmethodID method_loadClass;
 
 static pthread_mutex_t log_mutex;
 static bool enable_candles, enable_quests, enable_send, enable_recv, enable_fragmetns,
-open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests,
+open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests, open_changelevel,
 open_heaerrtrades;
 static bool load_errored = false;
+static bool changelevel_available = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
 static _Atomic bool edemShown = true;
@@ -62,13 +64,13 @@ func Start(){
     return &Menu;
 }
 
-void get_Auth(char *TgcUUID, char *AccountSessionToken){
+void* get_gameptr() {
     uintptr_t address =  Cipher::CipherScan("\xA8\x83\x00\xD0\x00\x10\x80\x52\x13\x39\x06\xF9\xA1\xD4\xEC\x97\x00\xE4\x00\x6F", "??x?xxxxx??x???xxxxx");
     if(address == 0) {
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 0 failed");
         crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
         load_errored = true;
-        return;
+        return nullptr;
     }
     uintptr_t buf = 0;
     memcpy(&buf, (void *)address, 4);
@@ -77,8 +79,15 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
     int32_t rel;
     memcpy(&buf, (void *)(address + 8), 4);
     CipherArm64::decode_ldrstr_uimm(buf, &rel);
-    uintptr_t *Game = *(uintptr_t **)(((address >> 12) << 12) + addr + rel);
-    address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
+    return *(void **)(((address >> 12) << 12) + addr + rel);
+}
+
+void get_Auth(char *TgcUUID, char *AccountSessionToken){
+    auto* Game = (uintptr_t*)get_gameptr();
+    if(Game == nullptr) return;
+    uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
+    uintptr_t buf;
+    int32_t rel;
     if(address == 0) {
         __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 1 failed");
         crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
@@ -105,6 +114,20 @@ void JNIWrapper(jniexec_t execm) {
         vm->DetachCurrentThread();
     }
 }
+
+void* JNIWrapperv(jniexecv_t execm) {
+    JNIEnv *env;bool detach = false;
+    if(vm->GetEnv((void**)&env, JNI_VERSION_1_6) == JNI_EDETACHED) {
+        vm->AttachCurrentThread(&env, nullptr);
+        detach = true;
+    }
+    void* _return = execm(env);
+    if(detach) {
+        vm->DetachCurrentThread();
+    }
+    return _return;
+}
+
 void reloadSession(JNIEnv *env) {
     userWantsReauthorization = false;
     env->CallStaticVoidMethod(main_class, method_reauthorized);
@@ -150,6 +173,10 @@ void Menu() {
         ImGui::Checkbox(locale_strings[M_COLLECT_WL], &open_wl_collector);
         ImGui::Checkbox(locale_strings[M_INVITE_MANAGER], &open_invitemanager);
         ImGui::Checkbox(locale_strings[M_SPIRITS], &open_worldquests);
+        if(changelevel_available) {
+            ImGui::Checkbox(locale_strings[M_CHANGELEVEL], &open_changelevel);
+            if(open_changelevel) changelevel_draw();
+        }
         drop_draw();
         if(edemShown) if(ImGui::Button(locale_strings[M_EDEM_RUN]))  JNIWrapper(&edemRun);
         if(open_spiritshops) spiritshop_draw();
@@ -264,6 +291,7 @@ void Init(){
     worldquests_initIDs(env);
     invitemanager_initIDs(env);
     heartselector_initIDs(env);
+    changelevel_available = changelevel_initIDs(env);
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }

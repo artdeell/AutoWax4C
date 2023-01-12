@@ -1,5 +1,7 @@
 package git.artdeell.aw4c;
 
+import java.io.IOException;
+
 import git.artdeell.autowax.AutoWax;
 import git.artdeell.autowax.heartlist.HeartList;
 import git.artdeell.autowax.invitemanager.InviteManager;
@@ -120,6 +122,18 @@ public class CanvasMain {
                 break;
         }
     }
+
+    @Keep
+    public static String[] getLevelNames() {
+        try {
+            if (ContextOps.hasAssets())
+                return ContextOps.getAssetManager().list("Data/Levels");
+        }catch (IOException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
     @Keep private static native String[] getCredentials();
     @Keep public static native void goReauthorize();
     @Keep public static native void submitLogString(String s);

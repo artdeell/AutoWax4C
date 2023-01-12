@@ -46,6 +46,8 @@
 #define H_SOCIOPATH 39
 #define H_REFRESH 40
 #define L_LOAD_FROM_FILE 41
+#define M_CHANGELEVEL 42
+#define J_JUMP 43
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H
