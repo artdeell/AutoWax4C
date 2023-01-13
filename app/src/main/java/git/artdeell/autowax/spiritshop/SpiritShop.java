@@ -14,7 +14,7 @@ public class SpiritShop {
     private static SpiritShop spiritShop;
     private final AutoWax host;
     private final HashMap<Long, ArrayList<Element>> tradeLists = new HashMap<>();
-    private final Stack<Long> stack = new Stack<>();
+    private final Stack<LevelCouple> stack = new Stack<>();
 
     public static SpiritShop get(AutoWax host) {
         if(spiritShop == null) spiritShop = new SpiritShop(host);
@@ -45,7 +45,7 @@ public class SpiritShop {
                 initDone(Locale.get(Locale.SS_NO_ENTRYPOINT));
                 return;
             }
-            stack.push(0L);
+            stack.push(new LevelCouple(0, 0.0f));
             processTopStack();
             initDone(null);
         }catch (Exception e) {
@@ -53,12 +53,12 @@ public class SpiritShop {
         }
     }
     private void processTopStack() {
-        long stackTop = stack.peek();
+        LevelCouple stackTop = stack.peek();
         String[] elementStrings;
         String[] nameStrings;
         long[] gotos;
-        if(tradeLists.containsKey(stackTop)) {
-            ArrayList<Element> tradeList = tradeLists.get(stackTop);
+        if(tradeLists.containsKey(stackTop.levelId)) {
+            ArrayList<Element> tradeList = tradeLists.get(stackTop.levelId);
             elementStrings = new String[tradeList.size()];
             nameStrings = new String[tradeList.size()];
             gotos = new long[tradeList.size()];
@@ -74,14 +74,15 @@ public class SpiritShop {
             nameStrings = elementStrings = new String[0];
             gotos = new long[0];
         }
-        newList(elementStrings, nameStrings, gotos);
+        newList(elementStrings, nameStrings, gotos, stackTop.lastScrollPosition);
     }
-    public void pushLevel(long id) {
-       stack.push(id);
+    public void pushLevel(long id, float scrollPos) {
+       stack.peek().lastScrollPosition = scrollPos;
+       stack.push(new LevelCouple(id, 0));
        processTopStack();
     }
     public void popLevel() {
-        if(stack.peek() != 0) stack.pop();
+        if(stack.peek().levelId != 0) stack.pop();
         processTopStack();
     }
     public void purchase(long id) {
@@ -94,6 +95,6 @@ public class SpiritShop {
         }
     }
     public static native void purchaseResult(String result);
-    public static native void newList(String[] elementStrings, String[] nameStrings, long[] gotos);
+    public static native void newList(String[] elementStrings, String[] nameStrings, long[] gotos, float scrollPos);
     public static native void initDone(String result);
 }

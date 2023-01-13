@@ -8,6 +8,7 @@
 #include "spiritshop.h"
 #include "translation.h"
 #include "includes/imgui/imgui.h"
+#include "includes/imgui/imgui_internal.h"
 
 static bool context_operable = false;
 static bool list_done = false;
@@ -21,11 +22,14 @@ static char net_init_failreason_chars[256];
 static char purchase_result_chars[256];
 static _Atomic char op;
 static _Atomic jlong pushVal;
-jmethodID method_spiritShop;
+static jmethodID method_spiritShop;
+static ImGuiTableFlags flags = 0;
+static float lastScrollPos;
+static bool scroll_force;
 extern "C" void
 Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unused]] jclass clazz,
                                                         jobjectArray element_strings,
-                                                        jobjectArray name_strings, jlongArray gotos) {
+                                                        jobjectArray name_strings, jlongArray gotos, jfloat scroll_coord) {
     FreeStringArray(list, list_size);
     FreeStringArray(sub_list, list_size);
     if(goto_list != nullptr)
@@ -42,6 +46,8 @@ Java_git_artdeell_autowax_spiritshop_SpiritShop_newList(JNIEnv *env, [[maybe_unu
         WriteStringOrNull(env, &sub_list[i], (jstring)env->GetObjectArrayElement(element_strings, i));
         WriteStringOrNull(env, &list[i], (jstring)env->GetObjectArrayElement(name_strings, i));
     }
+    flags = 0;
+    lastScrollPos = scroll_coord;
     list_done = true;
 }
 extern "C" void
@@ -64,7 +70,7 @@ Java_git_artdeell_autowax_spiritshop_SpiritShop_purchaseResult(JNIEnv *env, [[ma
     env->ReleaseStringUTFChars(result, result_chars);
 }
 const JNINativeMethod methods[] = {
-        { "newList",     "([Ljava/lang/String;[Ljava/lang/String;[J)V", (void*)&Java_git_artdeell_autowax_spiritshop_SpiritShop_newList},
+        { "newList",     "([Ljava/lang/String;[Ljava/lang/String;[JF)V", (void*)&Java_git_artdeell_autowax_spiritshop_SpiritShop_newList},
         { "initDone",     "(Ljava/lang/String;)V", (void*)&Java_git_artdeell_autowax_spiritshop_SpiritShop_initDone},
         {"purchaseResult", "(Ljava/lang/String;)V", (void*)&Java_git_artdeell_autowax_spiritshop_SpiritShop_purchaseResult}
 };
@@ -72,12 +78,12 @@ void spiritshop_initIDs(JNIEnv* env) {
     jclass class_SpiritShop = LoadClass(env, "git.artdeell.autowax.spiritshop.SpiritShop");
     if(class_SpiritShop == nullptr) return;
     env->RegisterNatives(class_SpiritShop, methods, sizeof(methods)/sizeof(methods[0]));
-    method_spiritShop = env->GetStaticMethodID(main_class, "spiritShop", "(BJ)V");
+    method_spiritShop = env->GetStaticMethodID(main_class, "spiritShop", "(BJF)V");
     if(method_spiritShop == nullptr) return;
     context_operable = true;
 }
 void doMagikJNI(JNIEnv* env) {
-    env->CallStaticVoidMethod(main_class, method_spiritShop,(char) op, (jlong) pushVal);
+    env->CallStaticVoidMethod(main_class, method_spiritShop,(char) op, (jlong) pushVal, lastScrollPos);
 }
 
 
@@ -110,7 +116,7 @@ void ss_draw_net2() {
             ImGui::SameLine();
             if(ImGui::Button("OK")) purchase_result_chars[0] = 0;
         }
-        if (ImGui::BeginTable("#spirit_shop", 2, ImGuiTableFlags_ScrollX)) {
+        if (ImGui::BeginTable("#spirit_shop", 2, flags)) {
             float width = shop_compute_button_column_size();
             ImGui::TableSetupColumn("names", ImGuiTableColumnFlags_WidthStretch, 1);
             ImGui::TableSetupColumn("actions", ImGuiTableColumnFlags_WidthFixed, width);
@@ -125,6 +131,7 @@ void ss_draw_net2() {
                     list_done = false;
                     op = 1;
                     pushVal = goto_list[i];
+                    lastScrollPos = ImGui::GetScrollY();
                     ThreadWrapper(&doMagikJNI);
                 }
                 ImGui::SameLine();
@@ -137,7 +144,15 @@ void ss_draw_net2() {
                 ImGui::PopID();
                 ImGui::TableNextRow();
             }
+            if(scroll_force) {
+                scroll_force = false;
+                ImGui::SetScrollY(lastScrollPos);
+            }
             ImGui::EndTable();
+        }
+        if(flags == 0) {
+            flags = ImGuiTableFlags_ScrollY;
+            scroll_force = true;
         }
     } else {
         ImGui::TextUnformatted(locale_strings[G_LOADING]);

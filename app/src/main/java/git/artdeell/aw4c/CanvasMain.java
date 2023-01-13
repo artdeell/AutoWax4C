@@ -30,7 +30,7 @@ public class CanvasMain {
         }).start();
     }
     @Keep
-    public static void spiritShop(byte op, long arg) {
+    public static void spiritShop(byte op, long arg, float arg2) {
         switch (op) {
             case 0:
                 reauthorized();
@@ -38,7 +38,7 @@ public class CanvasMain {
                 CanvasMain.unlockUI();
                 break;
             case 1:
-                SpiritShop.get(aw).pushLevel(arg);
+                SpiritShop.get(aw).pushLevel(arg, arg2);
                 break;
             case 2:
                 SpiritShop.get(aw).popLevel();
