@@ -139,7 +139,6 @@ void ss_draw_net2() {
             }
             ImGui::EndTable();
         }
-        ImGui::EndChild();
     } else {
         ImGui::TextUnformatted(locale_strings[G_LOADING]);
     }
