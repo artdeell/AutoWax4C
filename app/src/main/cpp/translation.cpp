@@ -8,7 +8,7 @@
 #include <cstdlib>
 #include "translation.h"
 #include "main.h"
-
+#include "translation_chinese.h"
 static const char* locale_strings_ru[] = {
         "Похоже текущая сессия была прервана.\nНажмите кнопку ниже, чтобы продолжить.",
         "Перезагрузить",
@@ -105,7 +105,7 @@ static const char* locale_strings_default[] = {
 char** locale_strings = (char**)locale_strings_default;
 
 typedef struct {char* key; char** val;} lookup_type;
-static const lookup_type table[] = {{"ru", (char**)locale_strings_ru}};
+static const lookup_type table[] = {{"ru", (char**)locale_strings_ru}, {"zh", (char**)locale_strings_chinese}};
 
 extern "C"
 jboolean

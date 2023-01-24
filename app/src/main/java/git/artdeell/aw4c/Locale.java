@@ -53,6 +53,7 @@ import java.util.Objects;
     static {
         locales.put(null,new LocaleDefault());
         locales.put("ru", new LocaleRussian());
+        locales.put("zh", new LocaleChinese());
         setLocale(null);
     }
     public static String get(int i) {
