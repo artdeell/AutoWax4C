@@ -53,7 +53,12 @@ static const char* locale_strings_ru[] = {
         "Перезагрузить",
         "Загрузить из файла",
         "Прыгнуть на крату",
-        "Прыгнуть"
+        "Прыгнуть",
+        "Ошибка загрузки магазина",
+        "Платформа",
+        "ID товара",
+        "Купить предмет",
+        "Магазин"
 };
 static const char* locale_strings_default[] = {
         "It seems like the current session was terminated. \nPress the button below when you are ready to continue.",
@@ -99,7 +104,12 @@ static const char* locale_strings_default[] = {
         "Refresh",
         "Load from file",
         "Jump to level",
-        "Jump"
+        "Jump",
+        "Failed to load shop",
+        "Platform",
+        "Item ID",
+        "Buy IAP",
+        "Purchase IAPs"
 
 };
 char** locale_strings = (char**)locale_strings_default;

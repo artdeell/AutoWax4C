@@ -5,7 +5,7 @@ import java.util.Objects;
 
 @Keep public class Locale {
     private static final HashMap<String, LocaleInt> locales = new HashMap<>();
-    private static final String[] STRINGS = new String[44];
+    private static final String[] STRINGS = new String[46];
     public static final int Q_STAT_SET = 0;
     public static final int Q_CURRENCY = 1;
     public static final int Q_NO_CURRENCY = 2;
@@ -50,6 +50,10 @@ import java.util.Objects;
     public static final int C_RUN_QUEST_RESULT = 41;
     public static final int C_RUN_QUEST_FAILED = 42;
     public static final int FL_UNNAMED = 43;
+
+    public static final int I_MISSING_TRANSACTIONS = 44;
+
+    public static final int I_TRANSACTION_RESULT = 45;
     static {
         locales.put(null,new LocaleDefault());
         locales.put("ru", new LocaleRussian());

@@ -48,6 +48,11 @@
 #define L_LOAD_FROM_FILE 41
 #define M_CHANGELEVEL 42
 #define J_JUMP 43
+#define I_LOAD_FAILED 44
+#define I_PLATFORM 45
+#define I_ITEM_ID 46
+#define I_BUY 47
+#define M_IAP_PURCHASE 48
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H

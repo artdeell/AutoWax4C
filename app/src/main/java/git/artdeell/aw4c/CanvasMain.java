@@ -4,6 +4,7 @@ import java.io.IOException;
 
 import git.artdeell.autowax.AutoWax;
 import git.artdeell.autowax.heartlist.HeartList;
+import git.artdeell.autowax.iap.IapPurchase;
 import git.artdeell.autowax.invitemanager.InviteManager;
 import git.artdeell.autowax.spiritshop.SpiritShop;
 import git.artdeell.autowax.worldquest.Spirits;
@@ -133,6 +134,17 @@ public class CanvasMain {
             e.printStackTrace();
         }
         return null;
+    }
+
+    @Keep
+    public static void iapReloadList(String platform) {
+        reauthorized();
+        IapPurchase.get(aw).reload(platform);
+    }
+
+    @Keep
+    public static void iapBuy(String platform, String id) {
+        IapPurchase.get(aw).buy(platform, id);
     }
 
     @Keep private static native String[] getCredentials();

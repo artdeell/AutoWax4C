@@ -214,7 +214,7 @@ public class AutoWax {
     }
     public void doCandleRun() {
         CRArray.init();
-        ThreadPoolExecutor tpe = new ThreadPoolExecutor(4, 4, 200, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
+        ThreadPoolExecutor tpe = new ThreadPoolExecutor(2, 2, 200, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
         int maxProgress = 0;
         CanvasMain.submitLogString(Locale.get(Locale.C_RUNNING));
         for (Object o : CRArray.LEVELS) {

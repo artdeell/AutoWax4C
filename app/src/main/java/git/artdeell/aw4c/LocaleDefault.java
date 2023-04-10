@@ -46,5 +46,7 @@ public class LocaleDefault implements LocaleInt{
         strings[Locale.C_RUN_QUEST_RESULT]= "Extra collect result: %s";
         strings[Locale.C_RUN_QUEST_FAILED] = "Failed to run extra: %s";
         strings[Locale.FL_UNNAMED] = "<unnamed>";
+        strings[Locale.I_MISSING_TRANSACTIONS] = "No transaction updates. Wrong ID?";
+        strings[Locale.I_TRANSACTION_RESULT]= "ID: %s, result: %s";
     }
 }

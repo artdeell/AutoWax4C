@@ -17,6 +17,7 @@ import java.util.Arrays;
 public class ContextOps {
     static private ClipboardManager clipboard = null;
     private static Resources skyResources = null;
+    public static String skyPName = null;
     private static AssetManager assetManager = null;
     public static SharedPreferences sharedPreferences;
     @SuppressLint({"PrivateApi", "DiscouragedPrivateApi"})
@@ -28,6 +29,7 @@ public class ContextOps {
             Context context = (Context) activityThread.getDeclaredMethod("getApplication").invoke(activityThread.getDeclaredMethod("currentActivityThread").invoke(null));
             try {
                 skyResources = (Resources) context.getClass().getDeclaredField("skyRes").get(context);
+                skyPName = (String) context.getClass().getDeclaredField("skyPName").get(context);
             }catch (Exception e) {
                 e.printStackTrace();
             }
@@ -64,5 +66,9 @@ public class ContextOps {
     public static AssetManager getAssetManager() {
 
         return assetManager;
+    }
+
+    public static Resources getSkyResources() {
+        return skyResources;
     }
 }

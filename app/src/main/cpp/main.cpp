@@ -11,6 +11,7 @@
 #include "worldquests.h"
 #include "heartselector.h"
 #include "changelevel.h"
+#include "iap_purchase.h"
 #include "dlfake/fake_dlfcn.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
@@ -42,9 +43,10 @@ static jmethodID method_loadClass;
 static pthread_mutex_t log_mutex;
 static bool enable_candles, enable_quests, enable_send, enable_recv, enable_fragmetns,
 open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests, open_changelevel,
-open_heaerrtrades;
+open_heaerrtrades, open_iap_purchase;
 static bool load_errored = false;
 static bool changelevel_available = false;
+static bool iap_purchase_available = false;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
 static _Atomic bool edemShown = true;
@@ -183,6 +185,10 @@ void Menu() {
             ImGui::Checkbox(locale_strings[M_CHANGELEVEL], &open_changelevel);
             if(open_changelevel) changelevel_draw();
         }
+        //if(iap_purchase_available) {
+        //    ImGui::Checkbox(locale_strings[M_IAP_PURCHASE], &open_iap_purchase);
+        //    if(open_iap_purchase) iap_purchase_draw();
+        //}
         drop_draw();
         if(edemShown) if(ImGui::Button(locale_strings[M_EDEM_RUN]))  JNIWrapper(&edemRun);
         if(open_spiritshops) spiritshop_draw();
@@ -298,6 +304,10 @@ void Init(){
     invitemanager_initIDs(env);
     heartselector_initIDs(env);
     changelevel_available = changelevel_initIDs(env);
+    //iap_purchase_available = Cipher::isGameBeta();
+    //if(iap_purchase_available) {
+    //    iap_purchase_initIDs(env);
+    //}
     if(pthread_mutex_init(&log_mutex, nullptr)) {
         DIE("Failed to create the log mutex");
     }
