@@ -34,10 +34,12 @@ public class AutoWax {
     public final Object sessionLock = new Object();
     String userid = null;
     String session = null;
+    public static int version;
 
     public static void initWithParameters(int version, boolean isBeta) {
         API_HOST = isBeta ? "beta.radiance.thatgamecompany.com" : "live.radiance.thatgamecompany.com";
         userAgent = isBeta ? "Sky-Test-com.tgc.sky.android.test./0.15.1." + version + " (unknown; android 30.0.0; en)" : "Sky-Live-com.tgc.sky.android/0.15.1." + version + " (unknown; android 30.0.0; en)";
+        AutoWax.version = version;
     }
 
     public void resetSession(String userid, String session) {
@@ -123,7 +125,7 @@ public class AutoWax {
                 }
             }
         }
-        System.out.println(resp);
+        //System.out.println(resp);
         return resp;
     }
 

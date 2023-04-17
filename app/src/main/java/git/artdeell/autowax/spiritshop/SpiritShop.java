@@ -1,5 +1,7 @@
 package git.artdeell.autowax.spiritshop;
 
+import android.util.Log;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Objects;
@@ -25,8 +27,28 @@ public class SpiritShop {
     }
     public void init() {
         try {
-            JSONArray resp = host.doPost("/account/get_spirit_shops", host.genInitial()).optJSONArray("spirit_shops");
-            if(resp == null) {
+            JSONArray resp = new JSONArray();
+            long offset = 0;
+            while(true) {
+                JSONObject spiritShopRq = host.genInitial();
+                spiritShopRq.put("l", 1000);
+                spiritShopRq.put("o", offset);
+                spiritShopRq.put("v", AutoWax.version);
+                JSONObject fullRespone = host.doPost("/account/get_spirit_shops", spiritShopRq);
+                JSONArray response = fullRespone.optJSONArray("spirit_shops");
+                if(response != null) {
+                    resp.putAll(response);
+                    offset += response.length();
+                    if(fullRespone.optLong("spirit_shops_total_count") <= offset) {
+                        break;
+                    }
+                }else {
+                    resp.clear();
+                    break;
+                }
+            }
+
+            if(resp.isEmpty()) {
                 initDone(Locale.get(Locale.SS_NO_LIST));
                 return;
             }
