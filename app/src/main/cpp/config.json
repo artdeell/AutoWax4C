@@ -1,9 +1,9 @@
 {
   "name": "libaw4c.so",
-  "description": "A (partially) ported version of AutoWax for the Canvas ModLoader",
+  "description": "A version of AutoWax, ported to the Canvas ModLoader",
   "majorVersion":1,
   "minorVersion":3,
-  "patchVersion":4,
+  "patchVersion":5,
   "displayName":"AutoWax for Canvas",
   "displaysUI":true,
   "dependencies": [

@@ -29,13 +29,17 @@ public class SpiritShop {
         try {
             JSONArray resp = new JSONArray();
             long offset = 0;
+            long pickedVersion = 0;
             while(true) {
                 JSONObject spiritShopRq = host.genInitial();
                 spiritShopRq.put("l", 1000);
                 spiritShopRq.put("o", offset);
-                spiritShopRq.put("v", AutoWax.version);
+                spiritShopRq.put("v", pickedVersion);
                 JSONObject fullRespone = host.doPost("/account/get_spirit_shops", spiritShopRq);
                 JSONArray response = fullRespone.optJSONArray("spirit_shops");
+                if(pickedVersion == 0 && fullRespone.has("spirit_shops_version")) {
+                    pickedVersion = fullRespone.getInt("spirit_shops_version");
+                }
                 if(response != null) {
                     resp.putAll(response);
                     offset += response.length();
