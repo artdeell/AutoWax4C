@@ -92,17 +92,12 @@ void* get_gameptr() {
 
 void get_user_id(void* gameptr, char* TgcUUID) {
     uintptr_t offset1 = Cipher::CipherScan("\x68\x00\x40\xF9\xE1\x03\x1F\x2A\x00\x15\x40\xF9\x00\x00\x00\x00\xE8\x00\x40\xF9", "x?xxxxxxxxxx????x?xx");
-    uintptr_t buf = 0;
-    int32_t rel;
-    int32_t rel2;
-    memcpy(&buf, (void *)(offset1), 4);
-    CipherArm64::decode_ldrstr_uimm(buf, &rel);
-    memcpy(&buf, (void *)(offset1 + 8), 4);
-    CipherArm64::decode_ldrstr_uimm(buf, &rel2);
-    uintptr_t netgameclient = *(uintptr_t *)(*(uintptr_t *)((uintptr_t)gameptr + rel) + rel2);
     uintptr_t offset2 = Cipher::CipherScan("\x68\x72\x06\x91\x00\x01\x80\x3D\xFD\x7B\x41\xA9\xF4\x4F\xC2\xA8\xC0\x03\x5F\xD6", "x?xxxxxxxxxxxxxxxxxx");
-    memcpy(&buf, (void *)offset2, 4);
-    int32_t rel3 = CipherArm64::decode_addsub_imm(buf);
+    int32_t rel, rel2;
+    CipherArm64::decode_ldrstr_uimm(*((uint32_t*)offset1), &rel);
+    CipherArm64::decode_ldrstr_uimm(*((uint32_t*)(offset1 + 8)), &rel2);
+    uintptr_t netgameclient = *(uintptr_t *)(*(uintptr_t *)((uintptr_t)gameptr + rel) + rel2);
+    int32_t rel3 = CipherArm64::decode_addsub_imm(*(uint32_t*)offset2);
     auto *user = (unsigned char *)(netgameclient + rel3);
     snprintf(TgcUUID, 0x40u, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", user[0], user[1], user[2], user[3], user[4], user[5], user[6], user[7], user[8], user[9], user[10], user[11], user[12], user[13], user[14], user[15]);
 }
@@ -113,21 +108,7 @@ void get_Auth(void* gameptr, char *AccountSessionToken) {
         AccountSessionToken[0] = 0;
         return;
     }
-    /*uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
-    uintptr_t buf;
-    int32_t rel;
-    if(address == 0) {
-        __android_log_print(ANDROID_LOG_FATAL,"tinywax","pattern 1 failed");
-        crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
-        load_errored = true;
-        TgcUUID[0] = 0;
-        AccountSessionToken[0] = 0;
-        return;
-    }
-    memcpy(&buf, (void *)address, 4);
-    CipherArm64::decode_ldrstr_uimm(buf, &rel);*/
     uintptr_t AccountServerClient = Game[accountserverclient_rel/8];
-    auto *user = (std::byte *)(AccountServerClient + 702);
     auto *session = (std::byte *)(AccountServerClient + 718);
     snprintf(AccountSessionToken, 0x40u ,"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", session[0], session[1], session[2], session[3], session[4], session[5], session[6], session[7], session[8], session[9], session[10], session[11], session[12], session[13], session[14], session[15]);
 }
@@ -357,7 +338,7 @@ void ThreadWrapper(jniexec_t exec) {
 extern "C"
  jobjectArray 
 Java_git_artdeell_aw4c_CanvasMain_getCredentials(JNIEnv *env, [[maybe_unused]]jclass clazz) {
-    if(accountserverclient_rel == INT32_MAX) {
+    while(accountserverclient_rel == INT32_MAX) {
         key_ui_opened = true;
         pthread_mutex_lock(&key_lock_mutex);
         pthread_cond_wait(&key_lock_cond, &key_lock_mutex);
@@ -425,6 +406,18 @@ Java_git_artdeell_aw4c_CanvasMain_getUserId(JNIEnv *env, jclass clazz) {
 extern "C"
 void
 Java_git_artdeell_aw4c_CanvasMain_sendKeyData(JNIEnv *env, jclass clazz, jbyteArray data) {
+    if(data != nullptr) {
+        //do something with it (decode and scan pattern)
+        uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
+        if(address == 0) {
+            crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
+            load_errored = true;
+            key_ui_opened = false;
+            return;
+        }
+        CipherArm64::decode_ldrstr_uimm(*(uint32_t*)address, &accountserverclient_rel);
+        key_ui_opened = false;
+    }
     pthread_cond_broadcast(&key_lock_cond); // on finish
 }
 
@@ -435,7 +428,7 @@ const JNINativeMethod methods[] = {
         {"submitProgressBar","(II)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_submitProgressBar},
         {"unlockUI","()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_unlockUI},
         {"unlockEdem","()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_unlockEdem},
-        {"getUserId", "()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_getUserId},
+        {"getUserId", "()Ljava/lang/String;", (void*)&Java_git_artdeell_aw4c_CanvasMain_getUserId},
         {"sendKeyData", "([B)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_sendKeyData}
 };
 void registerNatives(JNIEnv* env) {

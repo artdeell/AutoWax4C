@@ -1,5 +1,7 @@
 package git.artdeell.aw4c;
 
+import android.util.Log;
+
 import java.io.IOException;
 
 import git.artdeell.autowax.AutoWax;
@@ -151,7 +153,8 @@ public class CanvasMain {
 
     @Keep
     public static void authorizeKey(String key) {
-
+        Log.i("CanvasMain", "Key entered: "+key);
+        sendKeyData(new byte[0]);
     }
 
     @Keep private static native String[] getCredentials();
