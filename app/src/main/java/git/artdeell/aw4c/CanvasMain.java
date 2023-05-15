@@ -15,7 +15,9 @@ public class CanvasMain {
     @Keep
     public static void reauthorized() {
         String[] creds = getCredentials();
-        if(creds == null) return;
+        if(creds == null) {
+
+        }
         aw.resetSession(creds[0], creds[1]);
     }
     @Keep
@@ -147,6 +149,11 @@ public class CanvasMain {
         IapPurchase.get(aw).buy(platform, id);
     }
 
+    @Keep
+    public static void authorizeKey(String key) {
+
+    }
+
     @Keep private static native String[] getCredentials();
     @Keep public static native void goReauthorize();
     @Keep public static native void submitLogString(String s);
@@ -154,4 +161,6 @@ public class CanvasMain {
     @Keep public static native void unlockUI();
     @Keep public static native void unlockWLCollector();
     @Keep public static native void unlockEdem();
+    @Keep public static native String getUserId();
+    @Keep public static native void sendKeyData(byte[] data);
 }

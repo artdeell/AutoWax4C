@@ -39,19 +39,25 @@ static jmethodID method_reauthorized;
 static jmethodID method_candleRun;
 static jmethodID method_edemRun;
 static jmethodID method_loadClass;
+static jmethodID method_authorizeKey;
 
 static pthread_mutex_t log_mutex;
+static pthread_mutex_t key_lock_mutex;
+static pthread_cond_t key_lock_cond;
 static bool enable_candles, enable_quests, enable_send, enable_recv, enable_fragmetns,
 open_spiritshops, open_wl_collector, open_invitemanager, open_worldquests, open_changelevel,
 open_heaerrtrades, open_iap_purchase;
 static bool load_errored = false;
 static bool changelevel_available = false;
 static bool iap_purchase_available = false;
+static bool key_ui_opened = false;
+static int32_t accountserverclient_rel = INT32_MAX;
 static _Atomic bool userWantsReauthorization = false;
 static _Atomic bool userInterfaceShown = true;
 static _Atomic bool edemShown = true;
 static _Atomic float progressBarVal = -1;
 static vm_string log_strings[6];
+static char key_string[40] = {0};
 static char* crash_string = "The mod did not load!";
 
 
@@ -84,14 +90,30 @@ void* get_gameptr() {
     return *(void **)(((address >> 12) << 12) + addr + rel);
 }
 
-void get_Auth(char *TgcUUID, char *AccountSessionToken){
-    auto* Game = (uintptr_t*)get_gameptr();
+void get_user_id(void* gameptr, char* TgcUUID) {
+    uintptr_t offset1 = Cipher::CipherScan("\x68\x00\x40\xF9\xE1\x03\x1F\x2A\x00\x15\x40\xF9\x00\x00\x00\x00\xE8\x00\x40\xF9", "x?xxxxxxxxxx????x?xx");
+    uintptr_t buf = 0;
+    int32_t rel;
+    int32_t rel2;
+    memcpy(&buf, (void *)(offset1), 4);
+    CipherArm64::decode_ldrstr_uimm(buf, &rel);
+    memcpy(&buf, (void *)(offset1 + 8), 4);
+    CipherArm64::decode_ldrstr_uimm(buf, &rel2);
+    uintptr_t netgameclient = *(uintptr_t *)(*(uintptr_t *)((uintptr_t)gameptr + rel) + rel2);
+    uintptr_t offset2 = Cipher::CipherScan("\x68\x72\x06\x91\x00\x01\x80\x3D\xFD\x7B\x41\xA9\xF4\x4F\xC2\xA8\xC0\x03\x5F\xD6", "x?xxxxxxxxxxxxxxxxxx");
+    memcpy(&buf, (void *)offset2, 4);
+    int32_t rel3 = CipherArm64::decode_addsub_imm(buf);
+    auto *user = (unsigned char *)(netgameclient + rel3);
+    snprintf(TgcUUID, 0x40u, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", user[0], user[1], user[2], user[3], user[4], user[5], user[6], user[7], user[8], user[9], user[10], user[11], user[12], user[13], user[14], user[15]);
+}
+
+void get_Auth(void* gameptr, char *AccountSessionToken) {
+    auto* Game = (uintptr_t*)gameptr;
     if(Game == nullptr) {
-        TgcUUID[0] = 0;
         AccountSessionToken[0] = 0;
         return;
     }
-    uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
+    /*uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
     uintptr_t buf;
     int32_t rel;
     if(address == 0) {
@@ -103,11 +125,10 @@ void get_Auth(char *TgcUUID, char *AccountSessionToken){
         return;
     }
     memcpy(&buf, (void *)address, 4);
-    CipherArm64::decode_ldrstr_uimm(buf, &rel);
-    uintptr_t AccountServerClient = Game[rel/8];
+    CipherArm64::decode_ldrstr_uimm(buf, &rel);*/
+    uintptr_t AccountServerClient = Game[accountserverclient_rel/8];
     auto *user = (std::byte *)(AccountServerClient + 702);
     auto *session = (std::byte *)(AccountServerClient + 718);
-    snprintf(TgcUUID, 0x40u, "%02x%02x%02x%02x-%02x%02x-%02x%02x-%02x%02x-%02x%02x%02x%02x%02x%02x", user[0], user[1], user[2], user[3], user[4], user[5], user[6], user[7], user[8], user[9], user[10], user[11], user[12], user[13], user[14], user[15]);
     snprintf(AccountSessionToken, 0x40u ,"%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x%02x", session[0], session[1], session[2], session[3], session[4], session[5], session[6], session[7], session[8], session[9], session[10], session[11], session[12], session[13], session[14], session[15]);
 }
 
@@ -148,6 +169,10 @@ void edemRun(JNIEnv* env) {
     edemShown = false;
     env->CallStaticVoidMethod(main_class, method_edemRun);
 }
+void sumbitKey(JNIEnv *env) {
+    env->CallStaticVoidMethod(main_class, method_authorizeKey, env->NewStringUTF(key_string));
+}
+
 void printLogLines() {
     pthread_mutex_lock(&log_mutex);
     for(int i = 4; i >= 0; i--) {
@@ -156,6 +181,18 @@ void printLogLines() {
     pthread_mutex_unlock(&log_mutex);
 }
 void Menu() {
+    if(key_ui_opened) {
+        ImGui::Text("Please enter key");
+        ImGui::PushItemWidth(-1);
+        ImGui::InputText("###key_input", key_string, 40);
+        ImGui::PopItemWidth();
+        if(ImGui::Button("fuck off")) {
+            ThreadWrapper(&sumbitKey);
+            //pthread_mutex_lock(&key_lock_mutex);
+            //pthread_mutex_unlock(&key_lock_mutex);
+        }
+        return;
+    }
     ImGui::TextUnformatted(locale_strings[OB_FREE_SOFTWARE]);
     if(!load_errored) {
         printLogLines();
@@ -228,15 +265,6 @@ jni_getvms_t getVMFunction() {
     dlclose(library);
     return sym == nullptr ? getVMFunction_fake() : (jni_getvms_t) sym;
 }
-void (*original_ssl)(int64_t arg1, int64_t arg2, int64_t arg3);
-void hook_ssl(int64_t arg1, int64_t arg2, int64_t arg3) {
-    original_ssl(arg1, 0, 0);
-}
-void ssl() {
-    CipherBase *hook = (new CipherHook)->set_Callback((uintptr_t) &original_ssl)
-            ->set_Hook((uintptr_t) &hook_ssl)->set_Address(0xca0454, true);
-    hook->Fire();
-}
 void Init(){
     if(strlen(locale_strings[OB_FREE_SOFTWARE]) != 67) {
         abort();
@@ -296,6 +324,7 @@ void Init(){
     method_reauthorized = env->GetStaticMethodID(main_class, "reauthorized","()V");
     method_candleRun = env->GetStaticMethodID(main_class, "candleRun", "(ZZZZZ)V");
     method_edemRun = env->GetStaticMethodID(mainClass, "edemRun", "()V");
+    method_authorizeKey = env->GetStaticMethodID(mainClass, "authorizeKey", "(Ljava/lang/String;)V");
     translation_init(env);
     spiritshop_initIDs(env);
     lights_initIDs(env);
@@ -308,8 +337,10 @@ void Init(){
     //if(iap_purchase_available) {
     //    iap_purchase_initIDs(env);
     //}
-    if(pthread_mutex_init(&log_mutex, nullptr)) {
-        DIE("Failed to create the log mutex");
+    if(pthread_mutex_init(&log_mutex, nullptr) ||
+       pthread_mutex_init(&key_lock_mutex, nullptr) ||
+       pthread_cond_init(&key_lock_cond, nullptr)) {
+        DIE("Failed to create the mutexes/conds");
     }
     env->CallStaticVoidMethod(main_class, env->GetStaticMethodID(main_class, "init","(IZ)V"), Cipher::getGameVersion(), Cipher::isGameBeta());
 }
@@ -326,14 +357,23 @@ void ThreadWrapper(jniexec_t exec) {
 extern "C"
  jobjectArray 
 Java_git_artdeell_aw4c_CanvasMain_getCredentials(JNIEnv *env, [[maybe_unused]]jclass clazz) {
-    char user[64];
-    char session[64];
-    get_Auth(user, session);
-    if(user[0] == 0 && session[0] == 0) return nullptr;
-    jobjectArray credsArray = env->NewObjectArray(2, class_String, nullptr);
-    env->SetObjectArrayElement(credsArray, 0, env->NewStringUTF(user));
-    env->SetObjectArrayElement(credsArray, 1, env->NewStringUTF(session));
-    return credsArray;
+    if(accountserverclient_rel == INT32_MAX) {
+        key_ui_opened = true;
+        pthread_mutex_lock(&key_lock_mutex);
+        pthread_cond_wait(&key_lock_cond, &key_lock_mutex);
+        pthread_mutex_unlock(&key_lock_mutex);
+    }
+     char user[64];
+     char session[64];
+     void* gameptr = get_gameptr();
+     get_user_id(gameptr, user);
+     get_Auth(gameptr, session);
+     if(user[0] == 0 && session[0] == 0) return nullptr;
+     jobjectArray credsArray = env->NewObjectArray(2, class_String, nullptr);
+     env->SetObjectArrayElement(credsArray, 0, env->NewStringUTF(user));
+     env->SetObjectArrayElement(credsArray, 1, env->NewStringUTF(session));
+     return credsArray;
+    return nullptr;
 }
 extern "C"
  void 
@@ -373,6 +413,21 @@ void
 Java_git_artdeell_aw4c_CanvasMain_unlockEdem([[maybe_unused]]JNIEnv *env, [[maybe_unused]]jclass clazz) {
     edemShown = true;
 }
+
+extern "C"
+jstring
+Java_git_artdeell_aw4c_CanvasMain_getUserId(JNIEnv *env, jclass clazz) {
+    char uid[64];
+    get_user_id(get_gameptr(), uid);
+    return env->NewStringUTF(uid);
+}
+
+extern "C"
+void
+Java_git_artdeell_aw4c_CanvasMain_sendKeyData(JNIEnv *env, jclass clazz, jbyteArray data) {
+    pthread_cond_broadcast(&key_lock_cond); // on finish
+}
+
 const JNINativeMethod methods[] = {
         { "submitLogString",     "(Ljava/lang/String;)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_submitLogString},
         {"getCredentials", "()[Ljava/lang/String;", (void*)&Java_git_artdeell_aw4c_CanvasMain_getCredentials},
@@ -380,6 +435,8 @@ const JNINativeMethod methods[] = {
         {"submitProgressBar","(II)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_submitProgressBar},
         {"unlockUI","()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_unlockUI},
         {"unlockEdem","()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_unlockEdem},
+        {"getUserId", "()V", (void*)&Java_git_artdeell_aw4c_CanvasMain_getUserId},
+        {"sendKeyData", "([B)V", (void*)&Java_git_artdeell_aw4c_CanvasMain_sendKeyData}
 };
 void registerNatives(JNIEnv* env) {
     env->RegisterNatives(main_class, methods, sizeof(methods)/sizeof(methods[0]));
@@ -401,4 +458,3 @@ void WriteStringOrNull(JNIEnv* env, char** string, jstring jstring) {
     env->ReleaseStringUTFChars(jstring, idChars);
     env->DeleteLocalRef(jstring);
 }
-
