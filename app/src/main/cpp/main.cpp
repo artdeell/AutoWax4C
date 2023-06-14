@@ -12,6 +12,7 @@
 #include "heartselector.h"
 #include "changelevel.h"
 #include "iap_purchase.h"
+#include "scandecode.h"
 #include "dlfake/fake_dlfcn.h"
 #include "includes/cipher/Cipher.h"
 #include "includes/imgui/imgui.h"
@@ -318,6 +319,7 @@ void Init(){
     //if(iap_purchase_available) {
     //    iap_purchase_initIDs(env);
     //}
+    scandecode_init();
     if(pthread_mutex_init(&log_mutex, nullptr) ||
        pthread_mutex_init(&key_lock_mutex, nullptr) ||
        pthread_cond_init(&key_lock_cond, nullptr)) {
@@ -407,8 +409,10 @@ extern "C"
 void
 Java_git_artdeell_aw4c_CanvasMain_sendKeyData(JNIEnv *env, jclass clazz, jbyteArray data) {
     if(data != nullptr) {
-        //do something with it (decode and scan pattern)
-        uintptr_t address = Cipher::CipherScan("\x00\x00\x40\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x00\x00\x40\xF9\x00\x00\x00\xF9\x00\x00\x00\x97\x00\x00\x00\x36\x68\xEE\x40\xF9", "??xx???x??xx??xxx??x???xx?xxxxxx");
+        jbyte* dataNative = env->GetByteArrayElements(data, nullptr);
+        jint dataLen = env->GetArrayLength((jarray)data);
+        uintptr_t address = scandecode_run(dataNative, dataLen);
+        env->ReleaseByteArrayElements(data, dataNative, JNI_ABORT);
         if(address == 0) {
             crash_string = locale_strings[M_AW4C_NEEDS_UPDATE];
             load_errored = true;

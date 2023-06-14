@@ -27,6 +27,7 @@ add_library( # Sets the name of the library.
         heartselector.cpp
         changelevel.cpp
         iap_purchase.cpp
+        scandecode.cpp
         dlfake/fake_dlfcn.c
         ${CMAKE_SOURCE_DIR}/classes_dex.o
         )
