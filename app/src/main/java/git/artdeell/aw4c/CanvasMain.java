@@ -1,7 +1,5 @@
 package git.artdeell.aw4c;
 
-import android.util.Log;
-
 import java.io.IOException;
 
 import git.artdeell.autowax.AutoWax;
@@ -18,7 +16,24 @@ public class CanvasMain {
     public static void reauthorized() {
         String[] creds = getCredentials();
         if(creds == null) {
-
+            String userId = getUserId();
+            if(userId.length() == 0) return; // also nothing we can do here. Alas, we will show the requires update screen anyway
+            try {
+                byte[] authData = KeyVerification.testUserId(userId);
+                sendKeyData(authData);
+                creds = getCredentials();
+            }catch (KeyVerification.KeyException e) {
+                signalKeyError(e.failReason);
+                sendKeyData(null);
+                return;
+            }catch (IOException e) {
+                signalKeyError(KeyVerification.KeyException.KEY_IOE);
+                sendKeyData(null);
+                return;
+            }
+        }
+        if(creds == null || creds.length == 0){
+            return; // nothing we can do here
         }
         aw.resetSession(creds[0], creds[1]);
     }
@@ -153,8 +168,20 @@ public class CanvasMain {
 
     @Keep
     public static void authorizeKey(String key) {
-        Log.i("CanvasMain", "Key entered: "+key);
-        sendKeyData(new byte[0]);
+        String userId = getUserId();
+        if(userId == null) {
+            sendKeyData(new byte[0]);
+        }else{
+            try {
+                KeyVerification.enrollUserId(userId, key);
+                sendKeyData(KeyVerification.testUserId(userId));
+            }catch (KeyVerification.KeyException e) {
+                signalKeyError(e.failReason);
+            }catch (IOException e) {
+                signalKeyError(KeyVerification.KeyException.KEY_IOE);
+            }
+        }
+
     }
 
     @Keep private static native String[] getCredentials();
@@ -165,5 +192,6 @@ public class CanvasMain {
     @Keep public static native void unlockWLCollector();
     @Keep public static native void unlockEdem();
     @Keep public static native String getUserId();
+    @Keep public static native void signalKeyError(int error);
     @Keep public static native void sendKeyData(byte[] data);
 }

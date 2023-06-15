@@ -23,7 +23,7 @@ __attribute((always_inline)) inline unsigned long sdstrtoul(const char *nptr) {
     unsigned long cutoff;
     int any, cutlim;
 
-    c = *s;
+    c = *s++;
     if (c == '0' && (*s == 'x' || *s == 'X')) {
         c = s[1];
         s += 2;
@@ -65,6 +65,7 @@ __attribute((always_inline)) void inline scandecode_line_process(char* line, siz
         else if(end[i] != search_target[i]) return;
         i++;
     }
+    __android_log_print(ANDROID_LOG_INFO, "DEBUG", "%s", line);
     uintptr_t memstart, memend;
     size_t doffset;
     i = 0;
@@ -110,6 +111,7 @@ __attribute((always_inline)) void inline scandecode_init() {
     close(mfd);
 }
 
+
 inline uintptr_t scandecode_run(jbyte* data, jint len) {
     jint el_len = (len - 1) / 2;
     unsigned char base = (unsigned char) data[el_len];
@@ -118,6 +120,7 @@ inline uintptr_t scandecode_run(jbyte* data, jint len) {
     jbyte* pattern_flags = &data[el_len + 1];
     for(uintptr_t i = 0; i < skylen; i++) {
         for(jint j = 0; j < el_len; j++) {
+            if(skybase+i+j >= skylen) return 0;
             auto* target = (jbyte*)(skybase+i+j);
             if(pattern_flags[j] & 0x1 && *target != pattern_data[j]) break;
             if(j == el_len-1) return skybase+i;

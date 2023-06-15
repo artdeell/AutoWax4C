@@ -42,7 +42,22 @@ static const char* locale_strings_chinese[] = {
         "刷新",
         "从文件加载",
         "传送地图",
-        "传送"
+        "传送",
+        "Failed to load shop",
+        "Platform",
+        "Item ID",
+        "Buy IAP",
+        "Purchase IAPs",
+        "Please enter your AW4C key.\nIf you don't have one, you can obtain it for free using Telegram @aw4cbot, or using Discord.",
+        "https://discord.gg/VThJQz5atA",
+        "Copy Discord server link",
+        "Submit key",
+        "Paste key",
+        "Server error",
+        "This key does not exist",
+        "You can't register more users on this key. Consult the telegram/discord channel for how to get more",
+        "I/O error. Please check your network connection.",
+        "Unknown error"
 };
 /*Static const char* locale_strings_default[] = {
         "sìhū dāngqián huìhuà yǐ zhōngzhǐ.\N dāng nín zhǔnbèi hǎo jìxù shí, qǐng àn xiàmiàn de ànniǔ.",

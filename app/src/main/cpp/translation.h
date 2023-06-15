@@ -53,6 +53,16 @@
 #define I_ITEM_ID 46
 #define I_BUY 47
 #define M_IAP_PURCHASE 48
+#define K_ENTER_KEY 49
+#define K_DISCORD_URL 50
+#define K_COPY_DISCORD_URL 51
+#define K_SUBMIT_KEY 52
+#define K_PASTE_KEY 53
+#define K_SERVER_ERROR 54
+#define K_NOT_FOUND 55
+#define K_OUT_OF_REGISTRATIONS 56
+#define K_IOE 57
+#define K_UNKNOWN_ERROR 58
 extern char** locale_strings;
 void translation_init(JNIEnv*);
 #endif //USERLIB_TRANSLATION_H

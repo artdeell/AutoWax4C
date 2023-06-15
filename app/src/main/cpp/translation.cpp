@@ -42,7 +42,7 @@ static const char* locale_strings_ru[] = {
         "Ошибка загрузки списка духов: %s",
         "Пройти",
         "Духи",
-        "AW4C - бесплатное ПО\nЕсли вы его купили, верните свои средства.",
+        "AW4C - бесплатное ПО для личного использования\nЕсли вы не пользуетесь им коммерчески, верните свои средства.",
         "Ой! Похоже нужно обновление...",
         "Собрать гонки",
         "Настройки торговли сердцами",
@@ -58,7 +58,17 @@ static const char* locale_strings_ru[] = {
         "Платформа",
         "ID товара",
         "Купить предмет",
-        "Магазин"
+        "Магазин",
+        "Введите ваш ключ AW4C.\nЕсли у вас его нет, вы можете получить его бесплатно с использованием Telegram-бота @aw4cbot, или используя Discord.",
+        "https://discord.gg/VThJQz5atA",
+        "Копировать Discord-ссылку",
+        "Отправить ключ",
+        "Вставить ключ",
+        "Ошибка на сервере",
+        "Этого ключа не существует",
+        "Вы не можете зарегистрировать больше пользователей на этом ключе. Проконсультируйтесь с Telegram/Discord каналом для получения дополнительной информации",
+        "Ошибка ввода-вывода. Проверьте своё соединение с сетью.",
+        "Неизвестная ошибка"
 };
 static const char* locale_strings_default[] = {
         "It seems like the current session was terminated. \nPress the button below when you are ready to continue.",
@@ -93,7 +103,7 @@ static const char* locale_strings_default[] = {
         "Failed to load spirits: %s",
         "Run",
         "Spirits",
-        "AW4C is free software\nIf you purchased it, please return your money",
+        "AW4C is free for personal use. \nIf you don't use it commercially, please return your money",
         "Whoops! Looks like we need an update...",
         "Collect races",
         "Heart trade config",
@@ -109,7 +119,19 @@ static const char* locale_strings_default[] = {
         "Platform",
         "Item ID",
         "Buy IAP",
-        "Purchase IAPs"
+        "Purchase IAPs",
+        "Please enter your AW4C key.\nIf you don't have one, you can obtain it for free using Telegram @aw4cbot, or using Discord.",
+        "https://discord.gg/VThJQz5atA",
+        "Copy Discord server link",
+        "Submit key",
+        "Paste key",
+        "Server error",
+        "This key does not exist",
+        "You can't register more users on this key. Consult the telegram/discord channel for how to get more",
+        "I/O error. Please check your network connection.",
+        "Unknown error"
+
+
 
 };
 char** locale_strings = (char**)locale_strings_default;
@@ -119,10 +141,9 @@ static const lookup_type table[] = {{"ru", (char**)locale_strings_ru}, {"zh", (c
 
 extern "C"
 jboolean
-Java_git_artdeell_aw4c_Locale_setLocaleNative(JNIEnv *env, jclass clazz, jstring locale) {
+Java_git_artdeell_aw4c_Locale_setLocaleNative(JNIEnv *env, [[maybe_unused]] jclass clazz, jstring locale) {
     const char* localeName = env->GetStringUTFChars(locale, nullptr);
-    for(size_t i = 0; i < sizeof(table)/sizeof(lookup_type); i++) {
-        lookup_type member = table[i];
+    for(auto member : table) {
         if(strcmp(member.key, localeName) == 0) {
             locale_strings = member.val;
             env->ReleaseStringUTFChars(locale, localeName);
@@ -140,7 +161,4 @@ void translation_init(JNIEnv* env) {
     jclass class_Locale = LoadClass(env, "git.artdeell.aw4c.Locale");
     env->RegisterNatives(class_Locale, methods, 1);
     env->CallStaticVoidMethod(class_Locale, env->GetStaticMethodID(class_Locale, "init", "()V"));
-    if(strlen(locale_strings_ru[OB_FREE_SOFTWARE]) != 109) {
-        abort();
-    }
 }
