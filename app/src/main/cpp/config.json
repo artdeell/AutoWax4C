@@ -3,7 +3,7 @@
   "description": "A version of AutoWax, ported to the Canvas ModLoader",
   "majorVersion":1,
   "minorVersion":3,
-  "patchVersion":5,
+  "patchVersion":7,
   "displayName":"AutoWax for Canvas",
   "displaysUI":true,
   "dependencies": [

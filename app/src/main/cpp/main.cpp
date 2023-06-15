@@ -265,7 +265,7 @@ jni_getvms_t getVMFunction() {
     return sym == nullptr ? getVMFunction_fake() : (jni_getvms_t) sym;
 }
 void Init(){
-    if(strlen(locale_strings[OB_FREE_SOFTWARE]) != 132) {
+    if(strlen(locale_strings[OB_FREE_SOFTWARE]) != 90) {
         abort();
     }
     //ssl();
